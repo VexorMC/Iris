@@ -733,7 +733,6 @@ public class ShadowRenderer {
 	}
 
 	public void destroy() {
-		targets.destroy();
 		((MemoryTrackingRenderBuffers) buffers).freeAndDeleteBuffers();
 	}
 
