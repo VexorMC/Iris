@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "MixinHumanoidArmorLayer",
+    "MixinGameClientEvents",
     "MixinItemBlockRenderTypes",
     "MixinShaderInstance",
     "MixinRenderFlame",

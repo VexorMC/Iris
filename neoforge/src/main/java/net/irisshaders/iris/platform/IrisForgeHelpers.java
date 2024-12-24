@@ -2,6 +2,10 @@ package net.irisshaders.iris.platform;
 
 import net.irisshaders.iris.Iris;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.fml.loading.LoadingModList;
@@ -50,5 +54,10 @@ public class IrisForgeHelpers implements IrisPlatformHelpers {
 	@Override
 	public boolean useELS() {
 		return true;
+	}
+
+	@Override
+	public BlockState getBlockAppearance(BlockAndTintGetter level, BlockState state, Direction cullFace, BlockPos pos) {
+		return state.getAppearance(level, pos, cullFace, null, null);
 	}
 }

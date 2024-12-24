@@ -6,9 +6,13 @@
   "plugin": "net.irisshaders.iris.mixin.IrisMixinPlugin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "BlockRendererAccessor",
     "CloudRendererAccessor",
+    "MixinAbstractBlockRenderContext",
     "MixinBlockRenderer",
+    "MixinBakedChunkModelBuilder",
     "MixinChunkBuildBuffers",
+    "MixinChunkVertexConsumer",
     "MixinChunkMeshBufferBuilder",
     "MixinChunkMeshBuildTask",
     "MixinCloudRenderer",
