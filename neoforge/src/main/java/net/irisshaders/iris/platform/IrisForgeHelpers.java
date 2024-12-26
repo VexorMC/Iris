@@ -20,6 +20,8 @@ public class IrisForgeHelpers implements IrisPlatformHelpers {
 		return LoadingModList.get().getModFileById(modId) != null;
 	}
 
+	boolean HAS_CAMO = isModLoaded("cable_facades");
+
 	@Override
 	public String getVersion() {
 		return LoadingModList.get().getModFileById(Iris.MODID).versionString();
@@ -56,8 +58,9 @@ public class IrisForgeHelpers implements IrisPlatformHelpers {
 		return true;
 	}
 
+	// TODO find a way to do this without breaking Cable Facades...
 	@Override
 	public BlockState getBlockAppearance(BlockAndTintGetter level, BlockState state, Direction cullFace, BlockPos pos) {
-		return state.getAppearance(level, pos, cullFace, null, null);
+		return state;
 	}
 }
