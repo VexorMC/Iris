@@ -26,7 +26,7 @@ public class TgfExporter {
 	private final String newline;
 
 	public TgfExporter() {
-		this(System.lineSeparator());
+		this(System.getProperty("line.separator"));
 	}
 
 	public TgfExporter(String newline) {

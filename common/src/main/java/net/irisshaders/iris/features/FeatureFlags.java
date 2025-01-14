@@ -1,7 +1,7 @@
 package net.irisshaders.iris.features;
 
 import net.irisshaders.iris.gl.IrisRenderSystem;
-import net.minecraft.client.resources.language.I18n;
+import net.minecraft.client.resource.language.I18n;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -18,7 +18,6 @@ public enum FeatureFlags {
 	ENTITY_TRANSLUCENT(() -> true, () -> true),
 	REVERSED_CULLING(() -> true, () -> true),
 	BLOCK_EMISSION_ATTRIBUTE(() -> true, () -> true),
-	CAN_DISABLE_WEATHER(() -> true, () -> true),
 	SSBO(() -> true, IrisRenderSystem::supportsSSBO),
 	UNKNOWN(() -> false, () -> false);
 
@@ -40,12 +39,12 @@ public enum FeatureFlags {
 
 		if (unsupportedIris) {
 			if (unsupportedHardware) {
-				return I18n.get("iris.unsupported.irisorpc");
+				return I18n.translate("iris.unsupported.irisorpc");
 			}
 
-			return I18n.get("iris.unsupported.iris");
+			return I18n.translate("iris.unsupported.iris");
 		} else if (unsupportedHardware) {
-			return I18n.get("iris.unsupported.pc");
+			return I18n.translate("iris.unsupported.pc");
 		} else {
 			return null;
 		}

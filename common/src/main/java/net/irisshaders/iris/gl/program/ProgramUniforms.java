@@ -11,9 +11,10 @@ import net.irisshaders.iris.gl.uniform.UniformHolder;
 import net.irisshaders.iris.gl.uniform.UniformType;
 import net.irisshaders.iris.gl.uniform.UniformUpdateFrequency;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.MinecraftClient;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ARBShaderImageLoadStore;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL30C;
 
@@ -45,10 +46,10 @@ public class ProgramUniforms {
 	}
 
 	private static long getCurrentTick() {
-		if (Minecraft.getInstance().level == null) {
+		if (MinecraftClient.getInstance().world == null) {
 			return 0L;
 		} else {
-			return Minecraft.getInstance().level.getGameTime();
+			return MinecraftClient.getInstance().world.getLevelProperties().getTime();
 		}
 	}
 
@@ -291,7 +292,7 @@ public class ProgramUniforms {
 
 		@Override
 		public OptionalInt location(String name, UniformType type) {
-			int id = GlStateManager._glGetUniformLocation(program, name);
+			int id = GL20.glGetUniformLocation(program, name);
 
 			if (id == -1) {
 				return OptionalInt.empty();
@@ -312,7 +313,7 @@ public class ProgramUniforms {
 		public ProgramUniforms buildUniforms() {
 			// Check for any unsupported uniforms and warn about them so that we can easily figure out what uniforms we
 			// need to add.
-			int activeUniforms = GlStateManager.glGetProgrami(program, GL20C.GL_ACTIVE_UNIFORMS);
+			int activeUniforms = GL20.glGetProgrami(program, GL20C.GL_ACTIVE_UNIFORMS);
 			IntBuffer sizeBuf = BufferUtils.createIntBuffer(1);
 			IntBuffer typeBuf = BufferUtils.createIntBuffer(1);
 

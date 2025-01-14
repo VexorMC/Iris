@@ -1,11 +1,13 @@
 package net.irisshaders.iris.mixin.vertices.block_rendering;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultedVertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.Arrays;
 
@@ -21,19 +23,35 @@ import java.util.Arrays;
  * behavior, though conditionally controlled by the current shader pack of course.
  */
 @Mixin(value = BufferBuilder.class, priority = 999)
-public abstract class MixinBufferBuilder_SeparateAo implements VertexConsumer {
+public abstract class MixinBufferBuilder_SeparateAo extends DefaultedVertexConsumer {
+	private float[] brightnesses;
+
+	private int brightnessIndex;
 
 	@Override
 	public void putBulkData(PoseStack.Pose matrixEntry, BakedQuad quad, float[] brightnesses, float red, float green,
-							float blue, float alpha, int[] lights, int overlay, boolean useQuadColorData) {
+							float blue, int[] lights, int overlay, boolean useQuadColorData) {
 		if (WorldRenderingSettings.INSTANCE.shouldUseSeparateAo()) {
-			float[] brightnesses1 = brightnesses;
-			int brightnessIndex = 0;
+			this.brightnesses = brightnesses;
+			this.brightnessIndex = 0;
 
 			brightnesses = new float[brightnesses.length];
 			Arrays.fill(brightnesses, 1.0f);
 		}
 
-		VertexConsumer.super.putBulkData(matrixEntry, quad, brightnesses, red, green, blue, alpha, lights, overlay, useQuadColorData);
+		super.putBulkData(matrixEntry, quad, brightnesses, red, green, blue, lights, overlay, useQuadColorData);
+	}
+
+	@ModifyVariable(method = "vertex", at = @At("HEAD"), index = 7, argsOnly = true)
+	public float vertex(float alpha) {
+		if (brightnesses != null && WorldRenderingSettings.INSTANCE.shouldUseSeparateAo()) {
+			if (brightnessIndex < brightnesses.length) {
+				alpha = brightnesses[brightnessIndex++];
+			} else {
+				brightnesses = null;
+			}
+		}
+
+		return alpha;
 	}
 }

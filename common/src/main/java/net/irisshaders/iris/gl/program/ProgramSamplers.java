@@ -15,6 +15,7 @@ import net.irisshaders.iris.gl.texture.TextureAccess;
 import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.mixin.GlStateManagerAccessor;
 import net.irisshaders.iris.shaderpack.properties.PackRenderTargetDirectives;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL20C;
 
 import java.util.ArrayList;
@@ -132,7 +133,7 @@ public class ProgramSamplers {
 			}
 
 			for (String name : names) {
-				int location = GlStateManager._glGetUniformLocation(program, name);
+				int location = GL20.glGetUniformLocation(program, name);
 
 				if (location == -1) {
 					// There's no active sampler with this particular name in the program.
@@ -147,7 +148,7 @@ public class ProgramSamplers {
 
 		@Override
 		public boolean hasSampler(String name) {
-			return GlStateManager._glGetUniformLocation(program, name) != -1;
+			return GL20.glGetUniformLocation(program, name) != -1;
 		}
 
 		@Override
@@ -186,7 +187,7 @@ public class ProgramSamplers {
 			}
 
 			for (String name : names) {
-				int location = GlStateManager._glGetUniformLocation(program, name);
+				int location = GL20.glGetUniformLocation(program, name);
 
 				if (location == -1) {
 					// There's no active sampler with this particular name in the program.

@@ -7,7 +7,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.irisshaders.iris.features.FeatureFlags;
-import net.irisshaders.iris.gl.GLDebug;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.buffer.ShaderStorageBufferHolder;
 import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
@@ -68,6 +67,7 @@ public class FinalPassRenderer {
 	private final Object2ObjectMap<String, TextureAccess> irisCustomTextures;
 	private final Set<GlImage> customImages;
 	private final TextureAccess noiseTexture;
+	private final FrameUpdateNotifier updateNotifier;
 	private final CenterDepthSampler centerDepthSampler;
 	private final Object2ObjectMap<String, TextureAccess> customTextureIds;
 	private final CustomUniforms customUniforms;
@@ -84,6 +84,7 @@ public class FinalPassRenderer {
 							 Object2ObjectMap<String, TextureAccess> irisCustomTextures, Set<GlImage> customImages, ImmutableSet<Integer> flippedAtLeastOnce
 		, CustomUniforms customUniforms) {
 		this.pipeline = pipeline;
+		this.updateNotifier = updateNotifier;
 		this.centerDepthSampler = centerDepthSampler;
 		this.customTextureIds = customTextureIds;
 		this.irisCustomTextures = irisCustomTextures;
@@ -147,7 +148,7 @@ public class FinalPassRenderer {
 
 		this.swapPasses = swapPasses.build();
 
-		GlStateManager._glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, 0);
+		GlStateManager.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, 0);
 	}
 
 	private static void setupMipmapping(RenderTarget target, boolean readFromAlt) {
@@ -219,7 +220,6 @@ public class FinalPassRenderer {
 		}
 
 		if (this.finalPass != null) {
-			GLDebug.pushGroup(990, "final");
 			// If there is a final pass, we use the shader-based full screen quad rendering pathway instead
 			// of just copying the color buffer.
 
@@ -253,7 +253,6 @@ public class FinalPassRenderer {
 			FullScreenQuadRenderer.INSTANCE.renderQuad();
 
 			FullScreenQuadRenderer.INSTANCE.end();
-			GLDebug.popGroup();
 		} else {
 			// If there are no passes, we somehow need to transfer the content of the Iris color render targets into
 			// the main Minecraft framebuffer.
@@ -289,7 +288,7 @@ public class FinalPassRenderer {
 			swapPass.from.bind();
 
 			RenderSystem.bindTexture(swapPass.targetTexture);
-			GlStateManager._glCopyTexSubImage2D(GL20C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, swapPass.width, swapPass.height);
+			GlStateManager.glCopyTexSubImage2D(GL20C.GL_TEXTURE_2D, 0, 0, 0, 0, 0, swapPass.width, swapPass.height);
 		}
 
 		// Make sure to reset the viewport to how it was before... Otherwise weird issues could occur.
@@ -297,7 +296,7 @@ public class FinalPassRenderer {
 		main.bindWrite(true);
 		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
-		GlStateManager._glUseProgram(0);
+		GlStateManager.glUseProgram(0);
 
 		for (int i = 0; i < SamplerLimits.get().getMaxTextureUnits(); i++) {
 			// Unbind all textures that we may have used.
@@ -386,7 +385,8 @@ public class FinalPassRenderer {
 		ComputeProgram[] programs = new ComputeProgram[compute.length];
 		for (int i = 0; i < programs.length; i++) {
 			ComputeSource source = compute[i];
-			if (source == null || source.getSource().isEmpty()) {
+			if (source == null || !source.getSource().isPresent()) {
+				continue;
 			} else {
 				// TODO: Properly handle empty shaders
 				Objects.requireNonNull(flipped);

@@ -1,8 +1,6 @@
 package net.irisshaders.iris.mixin.fabric;
 
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.fantastic.ParticleRenderingPhase;
-import net.irisshaders.iris.fantastic.PhasedParticleEngine;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.irisshaders.iris.shaderpack.properties.ParticleRenderingSettings;
 import net.minecraft.client.Camera;

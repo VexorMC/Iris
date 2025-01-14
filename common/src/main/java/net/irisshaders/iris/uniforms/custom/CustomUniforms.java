@@ -36,9 +36,11 @@ public class CustomUniforms implements FunctionContext {
 	private final Map<String, CachedUniform> variables = new Object2ObjectLinkedOpenHashMap<>();
 	private final Map<String, Expression> variablesExpressions = new Object2ObjectLinkedOpenHashMap<>();
 	private final CustomUniformFixedInputUniformsHolder inputHolder;
+	private final List<CachedUniform> uniforms = new ArrayList<>();
 	private final List<CachedUniform> uniformOrder;
 	private final Map<Object, Object2IntMap<CachedUniform>> locationMap = new Object2ObjectOpenHashMap<>();
 	private final Map<CachedUniform, List<CachedUniform>> dependsOn;
+	private final Map<CachedUniform, List<CachedUniform>> requiredBy;
 
 	private CustomUniforms(CustomUniformFixedInputUniformsHolder inputHolder, Map<String, Builder.Variable> variables) {
 		this.inputHolder = inputHolder;
@@ -62,8 +64,7 @@ public class CustomUniforms implements FunctionContext {
 					.forExpression(variable.name, variable.type, expression, this);
 				this.addVariable(expression, cachedUniform);
 				if (variable.uniform) {
-					List<CachedUniform> uniforms = new ArrayList<>();
-					uniforms.add(cachedUniform);
+					this.uniforms.add(cachedUniform);
 				}
 				//Iris.logger.info("Was able to resolve uniform " + variable.name + " = " + variable.expression);
 			} catch (Exception e) {
@@ -77,7 +78,7 @@ public class CustomUniforms implements FunctionContext {
 			// toposort
 
 			this.dependsOn = new Object2ObjectOpenHashMap<>();
-			Map<CachedUniform, List<CachedUniform>> requiredBy = new Object2ObjectOpenHashMap<>();
+			this.requiredBy = new Object2ObjectOpenHashMap<>();
 			Object2IntMap<CachedUniform> dependsOnCount = new Object2IntOpenHashMap<>();
 
 			for (CachedUniform input : this.inputHolder.getAll()) {
@@ -138,7 +139,7 @@ public class CustomUniforms implements FunctionContext {
 			}
 
 			while (!free.isEmpty()) {
-				CachedUniform pop = free.removeLast();
+				CachedUniform pop = free.remove(free.size() - 1);
 				if (!brokenUniforms.contains(pop)) {
 					// only add those that aren't broken
 					ordered.add(pop);
@@ -304,7 +305,7 @@ public class CustomUniforms implements FunctionContext {
 			.put("vec3", VectorType.VEC3)
 			.put("vec4", VectorType.VEC4)
 			.build();
-		final Map<String, Variable> variables = new Object2ObjectLinkedOpenHashMap<>();
+		Map<String, Variable> variables = new Object2ObjectLinkedOpenHashMap<>();
 
 		public void addVariable(String type, String name, String expression, boolean isUniform) {
 			if (variables.containsKey(name)) {

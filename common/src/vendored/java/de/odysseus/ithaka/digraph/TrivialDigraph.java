@@ -107,10 +107,10 @@ public class TrivialDigraph<V> implements DoubledDigraph<V> {
 		if (vertex == null) {
 			return Collections.emptyList();
 		}
-		return new Iterable<>() {
+		return new Iterable<V>() {
 			@Override
 			public Iterator<V> iterator() {
-				return new Iterator<>() {
+				return new Iterator<V>() {
 					boolean hasNext = true;
 
 					@Override
@@ -209,10 +209,10 @@ public class TrivialDigraph<V> implements DoubledDigraph<V> {
 		if (!hasLoop || vertex == null || !vertex.equals(source)) {
 			return Collections.emptyList();
 		}
-		return new Iterable<>() {
+		return new Iterable<V>() {
 			@Override
 			public Iterator<V> iterator() {
-				return new Iterator<>() {
+				return new Iterator<V>() {
 					boolean hasNext = true;
 
 					@Override

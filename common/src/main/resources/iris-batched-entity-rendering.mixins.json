@@ -7,10 +7,9 @@
   "client": [
     "BufferSourceAccessor",
     "CompositeStateAccessor",
-    "MixinBannerRenderer",
+    "MixinBufferBuilder",
     "MixinBufferBuilder_SegmentRendering",
     "MixinBufferSource",
-    "MixinByteBufferBuilder",
     "MixinCompositeRenderType",
     "MixinDebugScreenOverlay",
     "MixinFishingHookRenderer",
@@ -22,7 +21,7 @@
     "OutlineBufferSourceAccessor",
     "RenderStateShardAccessor",
     "RenderTypeAccessor",
-    "SectionBufferBuilderPackAccessor"
+    "ChunkBufferBuilderPackAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

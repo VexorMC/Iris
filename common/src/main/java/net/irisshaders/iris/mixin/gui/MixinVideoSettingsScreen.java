@@ -3,8 +3,8 @@ package net.irisshaders.iris.mixin.gui;
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
 import net.irisshaders.iris.gui.screen.ShaderPackScreen;
 import net.minecraft.client.OptionInstance;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +17,7 @@ public abstract class MixinVideoSettingsScreen extends Screen {
 	}
 
 	@ModifyArg(
-		method = "addOptions",
+		method = "init",
 		at = @At(
 			value = "INVOKE",
 			target = "Lnet/minecraft/client/gui/components/OptionsList;addSmall([Lnet/minecraft/client/OptionInstance;)V"

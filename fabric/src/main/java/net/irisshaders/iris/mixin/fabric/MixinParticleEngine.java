@@ -2,8 +2,6 @@ package net.irisshaders.iris.mixin.fabric;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.irisshaders.iris.fantastic.ParticleRenderingPhase;
-import net.irisshaders.iris.fantastic.PhasedParticleEngine;
 import net.irisshaders.iris.pipeline.programs.ShaderAccess;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.ParticleRenderType;

@@ -48,9 +48,9 @@ public class FallbackShader extends ShaderInstance {
 		this.FOG_DENSITY = this.getUniform("FogDensity");
 		this.FOG_IS_EXP2 = this.getUniform("FogIsExp2");
 
-		this.gtexture = GlStateManager._glGetUniformLocation(getId(), "gtexture");
-		this.overlay = GlStateManager._glGetUniformLocation(getId(), "overlay");
-		this.lightmap = GlStateManager._glGetUniformLocation(getId(), "lightmap");
+		this.gtexture = GlStateManager.glGetUniformLocation(getId(), "gtexture");
+		this.overlay = GlStateManager.glGetUniformLocation(getId(), "overlay");
+		this.lightmap = GlStateManager.glGetUniformLocation(getId(), "lightmap");
 
 
 		Uniform ALPHA_TEST_VALUE = this.getUniform("AlphaTestValue");
@@ -96,9 +96,9 @@ public class FallbackShader extends ShaderInstance {
 			uploadIfNotNull(uniform);
 		}
 
-		GlStateManager._glUniform1i(gtexture, 0);
-		GlStateManager._glUniform1i(overlay, 1);
-		GlStateManager._glUniform1i(lightmap, 2);
+		GlStateManager.glUniform1i(gtexture, 0);
+		GlStateManager.glUniform1i(overlay, 1);
+		GlStateManager.glUniform1i(lightmap, 2);
 
 		if (this.blendModeOverride != null) {
 			this.blendModeOverride.apply();

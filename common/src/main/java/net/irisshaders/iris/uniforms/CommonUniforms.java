@@ -13,11 +13,11 @@ import net.irisshaders.iris.mixin.GlStateManagerAccessor;
 import net.irisshaders.iris.mixin.statelisteners.BooleanStateAccessor;
 import net.irisshaders.iris.mixin.texture.TextureAtlasAccessor;
 import net.irisshaders.iris.mixinterface.LocalPlayerInterface;
-import net.irisshaders.iris.pbr.TextureInfoCache;
-import net.irisshaders.iris.pbr.TextureInfoCache.TextureInfo;
-import net.irisshaders.iris.pbr.TextureTracker;
 import net.irisshaders.iris.shaderpack.IdMap;
 import net.irisshaders.iris.shaderpack.properties.PackDirectives;
+import net.irisshaders.iris.texture.TextureInfoCache;
+import net.irisshaders.iris.texture.TextureInfoCache.TextureInfo;
+import net.irisshaders.iris.texture.TextureTracker;
 import net.irisshaders.iris.uniforms.transforms.SmoothedFloat;
 import net.irisshaders.iris.uniforms.transforms.SmoothedVec2f;
 import net.minecraft.client.Minecraft;
@@ -249,8 +249,8 @@ public final class CommonUniforms {
 		if (cameraEntity instanceof LivingEntity) {
 			MobEffectInstance darkness = ((LivingEntity) cameraEntity).getEffect(MobEffects.DARKNESS);
 
-			if (darkness != null) {
-				return darkness.getBlendFactor((LivingEntity) cameraEntity, CapturedRenderingState.INSTANCE.getTickDelta());
+			if (darkness != null && darkness.getFactorData().isPresent()) {
+				return darkness.getFactorData().get().getFactor((LivingEntity) cameraEntity, CapturedRenderingState.INSTANCE.getTickDelta());
 			}
 		}
 

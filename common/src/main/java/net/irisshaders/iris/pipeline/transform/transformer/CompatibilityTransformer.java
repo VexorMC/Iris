@@ -110,7 +110,7 @@ public class CompatibilityTransformer {
 	private static final Template<ExternalDeclaration> layoutedOutDeclarationTemplate = Template
 		.withExternalDeclaration("out __type __name;");
 	private static final String attachTargetPrefix = "outColor";
-	private static final List<String> reservedWords = List.of("texture", "sample");
+	private static final List<String> reservedWords = List.of("texture");
 
 	static {
 		declarationTemplate
@@ -361,7 +361,7 @@ public class CompatibilityTransformer {
 	private static TypeQualifier makeQualifierOut(TypeQualifier typeQualifier) {
 		for (TypeQualifierPart qualifierPart : typeQualifier.getParts()) {
 			if (qualifierPart instanceof StorageQualifier storageQualifier) {
-				if (storageQualifier.storageType == StorageType.IN) {
+				if (((StorageQualifier) qualifierPart).storageType == StorageType.IN) {
 					storageQualifier.storageType = StorageType.OUT;
 				}
 			}
@@ -466,7 +466,7 @@ public class CompatibilityTransformer {
 						// patch missing declarations with an initialization
 						if (!outDeclarations.containsKey(name)) {
 							// make sure the declared in is actually used
-							if (currentRoot.identifierIndex.getAncestors(name, ReferenceExpression.class).findAny().isEmpty()) {
+							if (!currentRoot.identifierIndex.getAncestors(name, ReferenceExpression.class).findAny().isPresent()) {
 								continue;
 							}
 

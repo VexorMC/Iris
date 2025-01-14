@@ -3,17 +3,16 @@ package net.irisshaders.iris.pipeline;
 import com.mojang.blaze3d.platform.GlStateManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
-import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkMeshFormats;
 import net.irisshaders.iris.compat.dh.DHCompat;
 import net.irisshaders.iris.features.FeatureFlags;
 import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.helpers.Tri;
 import net.irisshaders.iris.mixin.LevelRendererAccessor;
-import net.irisshaders.iris.pipeline.programs.SodiumPrograms;
 import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.shaderpack.properties.CloudSetting;
 import net.irisshaders.iris.shaderpack.properties.ParticleRenderingSettings;
 import net.irisshaders.iris.shaderpack.texture.TextureStage;
+import net.irisshaders.iris.targets.RenderTargetStateListener;
 import net.irisshaders.iris.uniforms.FrameUpdateNotifier;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -27,16 +26,16 @@ public class VanillaRenderingPipeline implements WorldRenderingPipeline {
 		WorldRenderingSettings.INSTANCE.setUseSeparateAo(false);
 		WorldRenderingSettings.INSTANCE.setSeparateEntityDraws(false);
 		WorldRenderingSettings.INSTANCE.setAmbientOcclusionLevel(1.0f);
-		WorldRenderingSettings.INSTANCE.setVertexFormat(ChunkMeshFormats.COMPACT);
+		WorldRenderingSettings.INSTANCE.setUseExtendedVertexFormat(false);
 		WorldRenderingSettings.INSTANCE.setVoxelizeLightBlocks(false);
-		WorldRenderingSettings.INSTANCE.setBlockTypeIds(Object2ObjectMaps.emptyMap());
+		WorldRenderingSettings.INSTANCE.setBlockTypeIds(null);
 	}
 
 	@Override
 	public void beginLevelRendering() {
 		// Use the default Minecraft framebuffer and ensure that no programs are in use
 		Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
-		GlStateManager._glUseProgram(0);
+		GlStateManager.glUseProgram(0);
 	}
 
 	@Override
@@ -72,6 +71,11 @@ public class VanillaRenderingPipeline implements WorldRenderingPipeline {
 	@Override
 	public void setOverridePhase(WorldRenderingPhase phase) {
 
+	}
+
+	@Override
+	public RenderTargetStateListener getRenderTargetStateListener() {
+		return RenderTargetStateListener.NOP;
 	}
 
 	@Override
@@ -115,7 +119,7 @@ public class VanillaRenderingPipeline implements WorldRenderingPipeline {
 	}
 
 	@Override
-	public SodiumPrograms getSodiumPrograms() {
+	public SodiumTerrainPipeline getSodiumTerrainPipeline() {
 		// no shaders to override
 		return null;
 	}
@@ -167,27 +171,7 @@ public class VanillaRenderingPipeline implements WorldRenderingPipeline {
 	}
 
 	@Override
-	public boolean shouldRenderWeather() {
-		return true;
-	}
-
-	@Override
-	public boolean shouldRenderWeatherParticles() {
-		return true;
-	}
-
-	@Override
 	public boolean shouldRenderMoon() {
-		return true;
-	}
-
-	@Override
-	public boolean shouldRenderStars() {
-		return true;
-	}
-
-	@Override
-	public boolean shouldRenderSkyDisc() {
 		return true;
 	}
 
@@ -220,10 +204,5 @@ public class VanillaRenderingPipeline implements WorldRenderingPipeline {
 	@Override
 	public DHCompat getDHCompat() {
 		return null;
-	}
-
-	@Override
-	public void setIsMainBound(boolean mainBound) {
-
 	}
 }

@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 public class IrisTimeUniforms {
 	private static LocalDateTime dateTime;
 
+	static {
+	}
+
 	public static void updateTime() {
 		dateTime = LocalDateTime.now();
 	}

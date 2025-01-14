@@ -2,12 +2,9 @@ package net.irisshaders.iris.gl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexSorting;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.mixin.GlStateManagerAccessor;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3i;
@@ -15,6 +12,8 @@ import org.lwjgl.opengl.ARBDirectStateAccess;
 import org.lwjgl.opengl.ARBDrawBuffersBlend;
 import org.lwjgl.opengl.EXTShaderImageLoadStore;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL32C;
 import org.lwjgl.opengl.GL33C;
@@ -254,9 +253,9 @@ public class IrisRenderSystem {
 
 	public static int getMaxImageUnits() {
 		if (GL.getCapabilities().OpenGL42 || GL.getCapabilities().GL_ARB_shader_image_load_store) {
-			return GlStateManager._getInteger(GL42C.GL_MAX_IMAGE_UNITS);
+			return GL11.glGetInteger(GL42C.GL_MAX_IMAGE_UNITS);
 		} else if (GL.getCapabilities().GL_EXT_shader_image_load_store) {
-			return GlStateManager._getInteger(EXTShaderImageLoadStore.GL_MAX_IMAGE_UNITS_EXT);
+			return GL11.glGetInteger(EXTShaderImageLoadStore.GL_MAX_IMAGE_UNITS_EXT);
 		} else {
 			return 0;
 		}
@@ -305,13 +304,13 @@ public class IrisRenderSystem {
 	public static void disableBufferBlend(int buffer) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		GL32C.glDisablei(GL32C.GL_BLEND, buffer);
-		((BooleanStateExtended) GlStateManagerAccessor.getBLEND().mode).setUnknownState();
+		((BooleanStateExtended) GlStateManagerAccessor.getBLEND().capState).setUnknownState();
 	}
 
 	public static void enableBufferBlend(int buffer) {
 		RenderSystem.assertOnRenderThreadOrInit();
 		GL32C.glEnablei(GL32C.GL_BLEND, buffer);
-		((BooleanStateExtended) GlStateManagerAccessor.getBLEND().mode).setUnknownState();
+		((BooleanStateExtended) GlStateManagerAccessor.getBLEND().capState).setUnknownState();
 	}
 
 	public static void blendFuncSeparatei(int buffer, int srcRGB, int dstRGB, int srcAlpha, int dstAlpha) {
@@ -337,11 +336,13 @@ public class IrisRenderSystem {
 
 	public static void setShadowProjection(Matrix4f shadowProjection) {
 		backupProjection = RenderSystem.getProjectionMatrix();
-		RenderSystem.setProjectionMatrix(shadowProjection, VertexSorting.ORTHOGRAPHIC_Z);
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glLoadMatrixf(shadowProjection.get(new float[16]));
 	}
 
 	public static void restorePlayerProjection() {
-		RenderSystem.setProjectionMatrix(backupProjection, VertexSorting.DISTANCE_TO_ORIGIN);
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glLoadMatrixf(backupProjection.get(new float[16]));
 		backupProjection = null;
 	}
 
@@ -456,18 +457,6 @@ public class IrisRenderSystem {
 		return dsaState.createBuffers();
 	}
 
-	private static boolean cullingState;
-
-	public static void backupAndDisableCullingState(boolean b) {
-		cullingState = Minecraft.getInstance().smartCull;
-		Minecraft.getInstance().smartCull = Minecraft.getInstance().smartCull && !b;
-	}
-
-	public static void restoreCullingState() {
-		Minecraft.getInstance().smartCull = cullingState;
-		cullingState = true;
-	}
-
 	public interface DSAAccess {
 		void generateMipmaps(int texture, int target);
 
@@ -548,14 +537,14 @@ public class IrisRenderSystem {
 
 		@Override
 		public void bindTextureToUnit(int target, int unit, int texture) {
-			if (GlStateManagerAccessor.getTEXTURES()[unit].binding == texture) {
+			if (GlStateManagerAccessor.getTEXTURES()[unit].boundTexture == texture) {
 				return;
 			}
 
 			ARBDirectStateAccess.glBindTextureUnit(unit, texture);
 
 			// Manually fix GLStateManager bindings...
-			GlStateManagerAccessor.getTEXTURES()[unit].binding = texture;
+			GlStateManagerAccessor.getTEXTURES()[unit].boundTexture = texture;
 		}
 
 		@Override
@@ -594,7 +583,7 @@ public class IrisRenderSystem {
 	public static class DSAUnsupported implements DSAAccess {
 		@Override
 		public void generateMipmaps(int texture, int target) {
-			GlStateManager._bindTexture(texture);
+			GlStateManager.bindTexture(texture);
 			GL32C.glGenerateMipmap(target);
 		}
 
@@ -618,13 +607,13 @@ public class IrisRenderSystem {
 
 		@Override
 		public void readBuffer(int framebuffer, int buffer) {
-			GlStateManager._glBindFramebuffer(GL32C.GL_FRAMEBUFFER, framebuffer);
+			GL30.glBindFramebuffer(GL32C.GL_FRAMEBUFFER, framebuffer);
 			GL32C.glReadBuffer(buffer);
 		}
 
 		@Override
 		public void drawBuffers(int framebuffer, int[] buffers) {
-			GlStateManager._glBindFramebuffer(GL32C.GL_FRAMEBUFFER, framebuffer);
+			GL30.glBindFramebuffer(GL32C.GL_FRAMEBUFFER, framebuffer);
 			GL32C.glDrawBuffers(buffers);
 		}
 
@@ -636,64 +625,65 @@ public class IrisRenderSystem {
 
 		@Override
 		public void copyTexSubImage2D(int destTexture, int target, int i, int i1, int i2, int i3, int i4, int width, int height) {
-			int previous = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
-			GlStateManager._bindTexture(destTexture);
+			int previous = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].boundTexture;
+			GlStateManager.bindTexture(destTexture);
 			GL32C.glCopyTexSubImage2D(target, i, i1, i2, i3, i4, width, height);
-			GlStateManager._bindTexture(previous);
+			GlStateManager.bindTexture(previous);
 		}
 
 		@Override
 		public void bindTextureToUnit(int target, int unit, int texture) {
-			int activeTexture = GlStateManager._getActiveTexture();
-			GlStateManager._activeTexture(GL30C.GL_TEXTURE0 + unit);
+			int activeTexture = GlStateManagerAccessor.getActiveTexture();
+			GlStateManager.activeTexture(GL30C.GL_TEXTURE0 + unit);
 			bindTextureForSetup(target, texture);
-			GlStateManager._activeTexture(activeTexture);
+			GlStateManager.activeTexture(activeTexture);
 		}
 
 		@Override
 		public int bufferStorage(int target, float[] data, int usage) {
-			int buffer = GlStateManager._glGenBuffers();
-			GlStateManager._glBindBuffer(target, buffer);
+			int buffer = GL30.glGenBuffers();
+			GL30.glBindBuffer(target, buffer);
 			bufferData(target, data, usage);
-			GlStateManager._glBindBuffer(target, 0);
+			GL30.glBindBuffer(target, 0);
 
 			return buffer;
 		}
 
 		@Override
 		public void blitFramebuffer(int source, int dest, int offsetX, int offsetY, int width, int height, int offsetX2, int offsetY2, int width2, int height2, int bufferChoice, int filter) {
-			GlStateManager._glBindFramebuffer(GL32C.GL_READ_FRAMEBUFFER, source);
-			GlStateManager._glBindFramebuffer(GL32C.GL_DRAW_FRAMEBUFFER, dest);
+			GL30.glBindFramebuffer(GL32C.GL_READ_FRAMEBUFFER, source);
+			GL30.glBindFramebuffer(GL32C.GL_DRAW_FRAMEBUFFER, dest);
 			GL32C.glBlitFramebuffer(offsetX, offsetY, width, height, offsetX2, offsetY2, width2, height2, bufferChoice, filter);
 		}
 
 		@Override
 		public void framebufferTexture2D(int fb, int fbtarget, int attachment, int target, int texture, int levels) {
-			GlStateManager._glBindFramebuffer(fbtarget, fb);
+			GL30.glBindFramebuffer(fbtarget, fb);
 			GL32C.glFramebufferTexture2D(fbtarget, attachment, target, texture, levels);
 		}
 
 		@Override
 		public int createFramebuffer() {
-			int framebuffer = GlStateManager.glGenFramebuffers();
-			GlStateManager._glBindFramebuffer(GL32C.GL_FRAMEBUFFER, framebuffer);
+			int framebuffer = GL30.glGenFramebuffers();
+			GL30.glBindFramebuffer(GL32C.GL_FRAMEBUFFER, framebuffer);
 			return framebuffer;
 		}
 
 		@Override
 		public int createTexture(int target) {
-			int texture = GlStateManager._genTexture();
-			GlStateManager._bindTexture(texture);
+			int texture = GlStateManager.getTexLevelParameter();
+			GlStateManager.bindTexture(texture);
 			return texture;
 		}
 
 		@Override
 		public int createBuffers() {
-			return GlStateManager._glGenBuffers();
+			int value = GL30.glGenBuffers();
+			return value;
 		}
 	}
 
-		/*
+	/*
 	public static void bindTextures(int startingTexture, int[] bindings) {
 		if (hasMultibind) {
 			ARBMultiBind.glBindTextures(startingTexture, bindings);
@@ -704,8 +694,8 @@ public class IrisRenderSystem {
 			}
 		} else {
 			for (int binding : bindings) {
-				GlStateManager._activeTexture(startingTexture);
-				GlStateManager._bindTexture(binding);
+				GlStateManager.activeTexture(startingTexture);
+				GlStateManager.bindTexture(binding);
 				startingTexture++;
 			}
 		}

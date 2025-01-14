@@ -14,12 +14,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.PlayerModelPart;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(ElytraLayer.class)
 public abstract class MixinElytraLayer<T extends LivingEntity, M extends EntityModel<T>> extends RenderLayer<T, M> {
@@ -30,11 +32,11 @@ public abstract class MixinElytraLayer<T extends LivingEntity, M extends EntityM
 		super(pRenderLayer0);
 	}
 
-	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/world/entity/LivingEntity;FFFFFF)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V"))
-	private void changeId(PoseStack pElytraLayer0, MultiBufferSource pMultiBufferSource1, int pInt2, T pLivingEntity3, float pFloat4, float pFloat5, float pFloat6, float pFloat7, float pFloat8, float pFloat9, CallbackInfo ci) {
+	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/world/entity/LivingEntity;FFFFFF)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V"), locals = LocalCapture.CAPTURE_FAILHARD)
+	private void changeId(PoseStack pElytraLayer0, MultiBufferSource pMultiBufferSource1, int pInt2, T pLivingEntity3, float pFloat4, float pFloat5, float pFloat6, float pFloat7, float pFloat8, float pFloat9, CallbackInfo ci, ItemStack lvItemStack11, ResourceLocation lvResourceLocation12) {
 		if (WorldRenderingSettings.INSTANCE.getItemIds() == null) return;
 
-		if (pLivingEntity3 instanceof AbstractClientPlayer player && player.getSkin().capeTexture() != null
+		if (pLivingEntity3 instanceof AbstractClientPlayer player && player.getCloakTextureLocation() != null
 			&& player.isModelPartShown(PlayerModelPart.CAPE)) {
 			CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getItemIds().applyAsInt(ELYTRA_CAPE_LOCATION));
 			return;

@@ -5,7 +5,7 @@ import com.mojang.blaze3d.platform.GlUtil;
 import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.gl.program.IrisProgramTypes;
+import net.irisshaders.iris.api.v0.IrisApi;
 import net.irisshaders.iris.pathways.HandRenderer;
 import net.irisshaders.iris.pipeline.ShaderRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPhase;
@@ -14,8 +14,6 @@ import net.irisshaders.iris.pipeline.programs.ShaderKey;
 import net.irisshaders.iris.shadows.ShadowRenderer;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
-import net.minecraft.Util;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
@@ -26,7 +24,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -73,7 +70,7 @@ public class MixinGameRenderer {
 		}
 	}
 
-	@Inject(method = {"getPositionTexColorShader"}, at = @At("HEAD"), cancellable = true)
+	@Inject(method = {"getPositionTexColorShader", "getPositionColorTexShader"}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overridePositionTexColorShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (isSky()) {
 			override(ShaderKey.SKY_TEXTURED_COLOR, cir);
@@ -99,7 +96,7 @@ public class MixinGameRenderer {
 		}
 	}
 
-	@Inject(method = "getRendertypeCloudsShader", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "getPositionTexColorNormalShader", at = @At("HEAD"), cancellable = true)
 	private static void iris$overridePositionTexColorNormalShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
 			override(ShaderKey.SHADOW_CLOUDS, cir);
@@ -141,7 +138,7 @@ public class MixinGameRenderer {
 	}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideTranslucentShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
-			override(ShaderKey.SHADOW_TRANSLUCENT, cir);
+			override(ShaderKey.SHADOW_TERRAIN_CUTOUT, cir);
 		} else if (isBlockEntities() || isEntities()) {
 			override(ShaderKey.MOVING_BLOCK, cir);
 		} else if (shouldOverrideShaders()) {
@@ -161,10 +158,6 @@ public class MixinGameRenderer {
 	}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideEntityCutoutShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
-			if (isBlockEntities()) {
-				override(ShaderKey.SHADOW_BLOCK, cir);
-				return;
-			}
 			override(ShaderKey.SHADOW_ENTITIES_CUTOUT, cir);
 		} else if (HandRenderer.INSTANCE.isActive()) {
 			override(HandRenderer.INSTANCE.isRenderingSolid() ? ShaderKey.HAND_CUTOUT_DIFFUSE : ShaderKey.HAND_WATER_DIFFUSE, cir);
@@ -186,10 +179,6 @@ public class MixinGameRenderer {
 	}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideEntityTranslucentShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
-			if (isBlockEntities()) {
-				override(ShaderKey.SHADOW_BLOCK, cir);
-				return;
-			}
 			override(ShaderKey.SHADOW_ENTITIES_CUTOUT, cir);
 		} else if (HandRenderer.INSTANCE.isActive()) {
 			override(HandRenderer.INSTANCE.isRenderingSolid() ? ShaderKey.HAND_CUTOUT_DIFFUSE : ShaderKey.HAND_WATER_DIFFUSE, cir);
@@ -236,10 +225,6 @@ public class MixinGameRenderer {
 	}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideEntitySolidDiffuseShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
-			if (isBlockEntities()) {
-				override(ShaderKey.SHADOW_BLOCK, cir);
-				return;
-			}
 			override(ShaderKey.SHADOW_ENTITIES_CUTOUT, cir);
 		} else if (HandRenderer.INSTANCE.isActive()) {
 			override(HandRenderer.INSTANCE.isRenderingSolid() ? ShaderKey.HAND_CUTOUT_DIFFUSE : ShaderKey.HAND_WATER_DIFFUSE, cir);
@@ -299,10 +284,7 @@ public class MixinGameRenderer {
 	}, at = @At("HEAD"), cancellable = true)
 	private static void iris$overrideEntityTranslucentEmissiveShader(CallbackInfoReturnable<ShaderInstance> cir) {
 		if (ShadowRenderer.ACTIVE) {
-			if (isBlockEntities()) {
-				override(ShaderKey.SHADOW_BLOCK, cir);
-				return;
-			}
+			// TODO: Wrong program
 			override(ShaderKey.SHADOW_ENTITIES_CUTOUT, cir);
 		} else if (isBlockEntities()) {
 			override(ShaderKey.BLOCK_ENTITY, cir);
@@ -341,6 +323,14 @@ public class MixinGameRenderer {
 		if (shouldOverrideShaders() && !ShadowRenderer.ACTIVE) {
 			override(ShaderKey.CRUMBLING, cir);
 		}
+	}
+
+	@Inject(method = "render", at = @At("HEAD"))
+	private void iris$startFrame(float tickDelta, long startTime, boolean pBoolean2, CallbackInfo ci) {
+		// This allows certain functions like float smoothing to function outside a world.
+		CapturedRenderingState.INSTANCE.setRealTickDelta(tickDelta);
+		SystemTimeUniforms.COUNTER.beginFrame();
+		SystemTimeUniforms.TIMER.beginFrame(startTime);
 	}
 
 	@Inject(method = {
@@ -399,21 +389,18 @@ public class MixinGameRenderer {
 		}
 	}
 
-	@Unique
 	private static boolean isBlockEntities() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
 		return pipeline != null && pipeline.getPhase() == WorldRenderingPhase.BLOCK_ENTITIES;
 	}
 
-	@Unique
 	private static boolean isEntities() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
 		return pipeline != null && pipeline.getPhase() == WorldRenderingPhase.ENTITIES;
 	}
 
-	@Unique
 	private static boolean isSky() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
@@ -427,7 +414,9 @@ public class MixinGameRenderer {
 		}
 	}
 
-	@Unique
+	// ignored: getRendertypeEndGatewayShader (we replace the end portal rendering for shaders)
+	// ignored: getRendertypeEndPortalShader (we replace the end portal rendering for shaders)
+
 	private static boolean isPhase(WorldRenderingPhase phase) {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
@@ -438,10 +427,6 @@ public class MixinGameRenderer {
 		}
 	}
 
-	// ignored: getRendertypeEndGatewayShader (we replace the end portal rendering for shaders)
-	// ignored: getRendertypeEndPortalShader (we replace the end portal rendering for shaders)
-
-	@Unique
 	private static boolean shouldOverrideShaders() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
@@ -452,7 +437,6 @@ public class MixinGameRenderer {
 		}
 	}
 
-	@Unique
 	private static void override(ShaderKey key, CallbackInfoReturnable<ShaderInstance> cir) {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
@@ -465,14 +449,6 @@ public class MixinGameRenderer {
 		}
 	}
 
-	@Inject(method = "render", at = @At("HEAD"))
-	private void iris$startFrame(DeltaTracker deltaTracker, boolean bl, CallbackInfo ci) {
-		// This allows certain functions like float smoothing to function outside a world.
-		CapturedRenderingState.INSTANCE.setRealTickDelta(deltaTracker.getGameTimeDeltaPartialTick(true));
-		SystemTimeUniforms.COUNTER.beginFrame();
-		SystemTimeUniforms.TIMER.beginFrame(Util.getNanos());
-	}
-
 	@Inject(method = "<init>", at = @At("TAIL"))
 	private void iris$logSystem(Minecraft arg, ItemInHandRenderer arg2, ResourceManager arg3, RenderBuffers arg4, CallbackInfo ci) {
 		Iris.logger.info("Hardware information:");
@@ -483,7 +459,7 @@ public class MixinGameRenderer {
 
 	@Redirect(method = "renderItemInHand", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/player/LocalPlayer;I)V"))
 	private void iris$disableVanillaHandRendering(ItemInHandRenderer itemInHandRenderer, float tickDelta, PoseStack poseStack, BufferSource bufferSource, LocalPlayer localPlayer, int light) {
-		if (Iris.isPackInUseQuick()) {
+		if (IrisApi.getInstance().isShaderPackInUse()) {
 			return;
 		}
 
@@ -491,11 +467,11 @@ public class MixinGameRenderer {
 	}
 
 	@Inject(method = "renderLevel", at = @At("TAIL"))
-	private void iris$runColorSpace(DeltaTracker deltaTracker, CallbackInfo ci) {
+	private void iris$runColorSpace(float f, long l, PoseStack poseStack, CallbackInfo ci) {
 		Iris.getPipelineManager().getPipeline().ifPresent(WorldRenderingPipeline::finalizeGameRendering);
 	}
 
-	@Redirect(method = "reloadShaders", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList()Ljava/util/ArrayList;", remap = false))
+	@Redirect(method = "reloadShaders", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList()Ljava/util/ArrayList;"))
 	private ArrayList<Program> iris$reloadGeometryShaders() {
 		ArrayList<Program> programs = Lists.newArrayList();
 		programs.addAll(IrisProgramTypes.GEOMETRY.getPrograms().values());

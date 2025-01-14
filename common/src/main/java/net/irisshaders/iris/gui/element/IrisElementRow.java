@@ -41,10 +41,6 @@ public class IrisElementRow {
 		this(1);
 	}
 
-	public int getWidth() {
-		return width;
-	}
-
 	/**
 	 * Adds an element to the right of this row.
 	 *
@@ -191,7 +187,6 @@ public class IrisElementRow {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public static abstract class ButtonElement<T extends ButtonElement<T>> extends Element {
 		private final Function<T, Boolean> onClick;
 
@@ -225,8 +220,8 @@ public class IrisElementRow {
 	 * A clickable button element that uses a {@link net.irisshaders.iris.gui.GuiUtil.Icon} as its label.
 	 */
 	public static class IconButtonElement extends ButtonElement<IconButtonElement> {
-		public final GuiUtil.Icon icon;
-		public final GuiUtil.Icon hoveredIcon;
+		public GuiUtil.Icon icon;
+		public GuiUtil.Icon hoveredIcon;
 
 		public IconButtonElement(GuiUtil.Icon icon, GuiUtil.Icon hoveredIcon, Function<IconButtonElement, Boolean> onClick) {
 			super(onClick);

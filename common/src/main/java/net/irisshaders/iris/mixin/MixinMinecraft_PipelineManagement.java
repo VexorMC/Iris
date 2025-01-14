@@ -3,7 +3,7 @@ package net.irisshaders.iris.mixin;
 import net.irisshaders.iris.Iris;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ReceivingLevelScreen;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,7 +16,7 @@ public class MixinMinecraft_PipelineManagement {
 	/**
 	 * Should run before the Minecraft.level field is updated after disconnecting from a server or leaving a singleplayer world
 	 */
-	@Inject(method = "clearClientLevel", at = @At("HEAD"))
+	@Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At("HEAD"))
 	public void iris$trackLastDimensionOnLeave(Screen arg, CallbackInfo ci) {
 		Iris.lastDimension = Iris.getCurrentDimension();
 	}
@@ -26,7 +26,7 @@ public class MixinMinecraft_PipelineManagement {
 	 * NB: Not on leave, another inject is used for that
 	 */
 	@Inject(method = "setLevel", at = @At("HEAD"))
-	private void iris$trackLastDimensionOnLevelChange(ClientLevel clientLevel, ReceivingLevelScreen.Reason reason, CallbackInfo ci) {
+	private void iris$trackLastDimensionOnLevelChange(ClientLevel clientLevel, CallbackInfo ci) {
 		Iris.lastDimension = Iris.getCurrentDimension();
 	}
 

@@ -33,10 +33,6 @@ public class NormI8 {
 		return pack(normal.x(), normal.y(), normal.z(), 0);
 	}
 
-	public static int pack(Vector3f normal, float w) {
-		return pack(normal.x(), normal.y(), normal.z(), w);
-	}
-
 	/**
 	 * Packs the specified vector components into a 32-bit integer in XYZ ordering with the 8 bits of padding at the
 	 * end.
@@ -47,10 +43,6 @@ public class NormI8 {
 	 */
 	public static int pack(float x, float y, float z, float w) {
 		return ((int) (x * 127) & 0xFF) | (((int) (y * 127) & 0xFF) << 8) | (((int) (z * 127) & 0xFF) << 16) | (((int) (w * 127) & 0xFF) << 24);
-	}
-
-	public static byte toByte(float v) {
-		return (byte) ((byte) (v * 127) & 0xFF);
 	}
 
 	/**

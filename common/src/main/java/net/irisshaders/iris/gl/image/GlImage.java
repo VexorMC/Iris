@@ -101,7 +101,7 @@ public class GlImage extends GlResource {
 
 	@Override
 	protected void destroyInternal() {
-		GlStateManager._deleteTexture(getGlId());
+		GlStateManager.deleteTexture(getGlId());
 	}
 
 	public InternalTextureFormat getInternalFormat() {

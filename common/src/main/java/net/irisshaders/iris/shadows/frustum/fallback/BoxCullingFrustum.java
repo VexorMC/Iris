@@ -1,16 +1,14 @@
 package net.irisshaders.iris.shadows.frustum.fallback;
 
-import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
-import net.caffeinemc.mods.sodium.client.render.viewport.ViewportProvider;
+import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiShadowCullingFrustum;
 import net.irisshaders.iris.shadows.frustum.BoxCuller;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
 import org.joml.Matrix4f;
-import org.joml.Vector3d;
 
-public class BoxCullingFrustum extends Frustum implements net.caffeinemc.mods.sodium.client.render.viewport.frustum.Frustum, ViewportProvider {
+public class BoxCullingFrustum extends Frustum {
 	private final BoxCuller boxCuller;
-	private final Vector3d position = new Vector3d();
+	private double x, y, z;
 
 	public BoxCullingFrustum(BoxCuller boxCuller) {
 		super(new Matrix4f(), new Matrix4f());
@@ -19,7 +17,9 @@ public class BoxCullingFrustum extends Frustum implements net.caffeinemc.mods.so
 	}
 
 	public void prepare(double cameraX, double cameraY, double cameraZ) {
-		this.position.set(cameraX, cameraY, cameraZ);
+		this.x = cameraX;
+		this.y = cameraY;
+		this.z = cameraZ;
 		boxCuller.setPosition(cameraX, cameraY, cameraZ);
 	}
 
@@ -33,15 +33,5 @@ public class BoxCullingFrustum extends Frustum implements net.caffeinemc.mods.so
 
 	public boolean isVisible(AABB box) {
 		return !boxCuller.isCulled(box);
-	}
-
-	@Override
-	public Viewport sodium$createViewport() {
-		return new Viewport(this, position);
-	}
-
-	@Override
-	public boolean testAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
-		return !boxCuller.isCulledSodium(minX, minY, minZ, maxX, maxY, maxZ);
 	}
 }

@@ -2,8 +2,7 @@ package net.irisshaders.iris.shaderpack.materialmap;
 
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkMeshFormats;
-import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -22,9 +21,9 @@ public class WorldRenderingSettings {
 	private boolean disableDirectionalShading;
 	private boolean hasVillagerConversionId;
 	private boolean useSeparateAo;
+	private boolean useExtendedVertexFormat;
 	private boolean separateEntityDraws;
 	private boolean voxelizeLightBlocks;
-	private ChunkVertexType chunkVertexFormat;
 
 	public WorldRenderingSettings() {
 		reloadRequired = false;
@@ -33,7 +32,7 @@ public class WorldRenderingSettings {
 		ambientOcclusionLevel = 1.0F;
 		disableDirectionalShading = false;
 		useSeparateAo = false;
-		chunkVertexFormat = ChunkMeshFormats.COMPACT;
+		useExtendedVertexFormat = false;
 		separateEntityDraws = false;
 		voxelizeLightBlocks = false;
 		hasVillagerConversionId = false;
@@ -61,6 +60,7 @@ public class WorldRenderingSettings {
 		this.blockStateIds = blockStateIds;
 	}
 
+	@Nullable
 	public Map<Block, BlockRenderType> getBlockTypeIds() {
 		return blockTypeIds;
 	}
@@ -134,17 +134,17 @@ public class WorldRenderingSettings {
 		this.useSeparateAo = useSeparateAo;
 	}
 
-	public ChunkVertexType getVertexFormat() {
-		return chunkVertexFormat;
+	public boolean shouldUseExtendedVertexFormat() {
+		return useExtendedVertexFormat;
 	}
 
-	public void setVertexFormat(ChunkVertexType chunkVertexFormat) {
-		if (chunkVertexFormat == this.chunkVertexFormat) {
+	public void setUseExtendedVertexFormat(boolean useExtendedVertexFormat) {
+		if (useExtendedVertexFormat == this.useExtendedVertexFormat) {
 			return;
 		}
 
 		this.reloadRequired = true;
-		this.chunkVertexFormat = chunkVertexFormat;
+		this.useExtendedVertexFormat = useExtendedVertexFormat;
 	}
 
 	public boolean shouldVoxelizeLightBlocks() {

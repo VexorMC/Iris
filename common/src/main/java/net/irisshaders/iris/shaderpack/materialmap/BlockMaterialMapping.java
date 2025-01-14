@@ -1,9 +1,11 @@
 package net.irisshaders.iris.shaderpack.materialmap;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.irisshaders.iris.Iris;
 import net.minecraft.client.renderer.RenderType;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +26,7 @@ import java.util.Map;
 public class BlockMaterialMapping {
 	public static Object2IntMap<BlockState> createBlockStateIdMap(Int2ObjectLinkedOpenHashMap<List<BlockEntry>> blockPropertiesMap, Int2ObjectLinkedOpenHashMap<List<TagEntry>> tagPropertiesMap) {
 		Object2IntMap<BlockState> blockStateIds = new Object2IntLinkedOpenHashMap<>();
-		blockStateIds.defaultReturnValue(-1);
+
 		blockPropertiesMap.forEach((intId, entries) -> {
 			for (BlockEntry entry : entries) {
 				addBlockStates(entry, blockStateIds, intId);
@@ -48,7 +51,7 @@ public class BlockMaterialMapping {
 		} else if (compatibleTags.size() > 1) {
 			Iris.logger.fatal("You've broke the system; congrats. More than one tag matched " + tagEntry.id());
 		} else {
-			BuiltInRegistries.BLOCK.getTag(compatibleTags.getFirst()).get().forEach((block) -> {
+			BuiltInRegistries.BLOCK.getTag(compatibleTags.get(0)).get().forEach((block) -> {
 					Map<String, String> propertyPredicates = tagEntry.propertyPredicates();
 
 					if (propertyPredicates.isEmpty()) {
@@ -92,18 +95,16 @@ public class BlockMaterialMapping {
 							idMap.putIfAbsent(state, intId);
 						}
 					}
-				}
+			}
 			);
 		}
 	}
 
 	public static Map<Block, BlockRenderType> createBlockTypeMap(Map<NamespacedId, BlockRenderType> blockPropertiesMap) {
-		if (blockPropertiesMap.isEmpty()) return Object2ObjectMaps.emptyMap();
-
 		Map<Block, BlockRenderType> blockTypeIds = new Reference2ReferenceOpenHashMap<>();
 
 		blockPropertiesMap.forEach((id, blockType) -> {
-			ResourceLocation resourceLocation = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), id.getName());
+			ResourceLocation resourceLocation = new ResourceLocation(id.getNamespace(), id.getName());
 
 			Block block = BuiltInRegistries.BLOCK.get(resourceLocation);
 
@@ -130,7 +131,7 @@ public class BlockMaterialMapping {
 		NamespacedId id = entry.id();
 		ResourceLocation resourceLocation;
 		try {
-			resourceLocation = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), id.getName());
+			resourceLocation = new ResourceLocation(id.getNamespace(), id.getName());
 		} catch (Exception exception) {
 			throw new IllegalStateException("Failed to get entry for " + intId, exception);
 		}

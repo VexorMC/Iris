@@ -2,7 +2,6 @@ package net.irisshaders.iris.gui.element;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gui.FileDialogUtil;
 import net.irisshaders.iris.gui.GuiUtil;
@@ -21,16 +20,13 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,14 +38,13 @@ import java.util.List;
 import java.util.Properties;
 
 public class ShaderPackOptionList extends IrisContainerObjectSelectionList<ShaderPackOptionList.BaseEntry> {
-	private static final ResourceLocation MENU_LIST_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/gui/menu_background.png");
 	private final List<AbstractElementWidget<?>> elementWidgets = new ArrayList<>();
 	private final ShaderPackScreen screen;
 	private final NavigationController navigation;
 	private OptionMenuContainer container;
 
 	public ShaderPackOptionList(ShaderPackScreen screen, NavigationController navigation, ShaderPack pack, Minecraft client, int width, int height, int top, int bottom, int left, int right) {
-		super(client, width, bottom, top, bottom, left, right, 24);
+		super(client, width, height, top, bottom, left, right, 24);
 		this.navigation = navigation;
 		this.screen = screen;
 
@@ -73,42 +68,6 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 	@Override
 	public int getRowWidth() {
 		return Math.min(400, width - 12);
-	}
-
-	@Override
-	protected void renderListBackground(GuiGraphics pAbstractSelectionList0) {
-		if (screen.listTransition.getAsFloat() < 0.02f) return;
-		RenderSystem.enableBlend();
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, screen.listTransition.getAsFloat());
-		pAbstractSelectionList0.blit(
-			MENU_LIST_BACKGROUND,
-			this.getX(),
-			this.getY() + 3,
-			(float) this.getRight(),
-			(float) (this.getBottom() + (int) this.getScrollAmount()),
-			this.getWidth(),
-			this.getHeight(),
-			32,
-			32
-		);
-
-		RenderSystem.disableBlend();
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-	}
-
-	@Override
-	protected void renderListSeparators(GuiGraphics pAbstractSelectionList0) {
-		RenderSystem.enableBlend();
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, screen.listTransition.getAsFloat());
-		pAbstractSelectionList0.blit(CreateWorldScreen.HEADER_SEPARATOR, this.getX(), this.getY() + 2, 0.0F, 0.0F, this.getWidth(), 2, 32, 2);
-		pAbstractSelectionList0.blit(CreateWorldScreen.FOOTER_SEPARATOR, this.getX(), this.getBottom(), 0.0F, 0.0F, this.getWidth(), 2, 32, 2);
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		RenderSystem.disableBlend();
-	}
-
-	@Override
-	protected boolean isValidMouseClick(int i) {
-		return i == GLFW.GLFW_MOUSE_BUTTON_1 || i == GLFW.GLFW_MOUSE_BUTTON_2;
 	}
 
 	public void addHeader(Component text, boolean backButton) {
@@ -149,72 +108,7 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 		}
 	}
 
-	public static class ElementRowEntry extends BaseEntry {
-		private final List<AbstractElementWidget<?>> widgets;
-		private final ShaderPackScreen screen;
-
-		private int cachedWidth;
-		private int cachedPosX;
-
-		public ElementRowEntry(ShaderPackScreen screen, NavigationController navigation, List<AbstractElementWidget<?>> widgets) {
-			super(navigation);
-
-			this.screen = screen;
-			this.widgets = widgets;
-		}
-
-		@Override
-		public void render(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-			this.cachedWidth = entryWidth;
-			this.cachedPosX = x;
-
-			// The amount of space widgets will occupy, excluding margins. Will be divided up between widgets.
-			int totalWidthWithoutMargins = entryWidth - (2 * (widgets.size() - 1));
-
-			totalWidthWithoutMargins -= 3; // Centers it for some reason
-
-			// Width of a single widget
-			float singleWidgetWidth = (float) totalWidthWithoutMargins / widgets.size();
-
-			for (int i = 0; i < widgets.size(); i++) {
-				AbstractElementWidget<?> widget = widgets.get(i);
-				boolean widgetHovered = (hovered && (getHoveredWidget(mouseX) == i)) || getFocused() == widget;
-
-				widget.bounds = new ScreenRectangle(x + (int) ((singleWidgetWidth + 2) * i), y, (int) singleWidgetWidth, entryHeight + 2);
-				widget.render(guiGraphics, mouseX, mouseY, tickDelta, widgetHovered);
-
-				screen.setElementHoveredStatus(widget, widgetHovered);
-			}
-		}
-
-		public int getHoveredWidget(int mouseX) {
-			float positionAcrossWidget = ((float) Mth.clamp(mouseX - cachedPosX, 0, cachedWidth)) / cachedWidth;
-
-			return Mth.clamp((int) Math.floor(widgets.size() * positionAcrossWidget), 0, widgets.size() - 1);
-		}
-
-		@Override
-		public boolean mouseClicked(double mouseX, double mouseY, int button) {
-			return this.widgets.get(getHoveredWidget((int) mouseX)).mouseClicked(mouseX, mouseY, button);
-		}
-
-		@Override
-		public boolean mouseReleased(double mouseX, double mouseY, int button) {
-			return this.widgets.get(getHoveredWidget((int) mouseX)).mouseReleased(mouseX, mouseY, button);
-		}
-
-		@Override
-		public @NotNull List<? extends GuiEventListener> children() {
-			return ImmutableList.copyOf(widgets);
-		}
-
-		@Override
-		public @NotNull List<? extends NarratableEntry> narratables() {
-			return ImmutableList.copyOf(widgets);
-		}
-	}
-
-	public class HeaderEntry extends BaseEntry {
+	public static class HeaderEntry extends BaseEntry {
 		public static final Component BACK_BUTTON_TEXT = Component.literal("< ").append(Component.translatable("options.iris.back").withStyle(ChatFormatting.ITALIC));
 		public static final MutableComponent RESET_BUTTON_TEXT_INACTIVE = Component.translatable("options.iris.reset").withStyle(ChatFormatting.GRAY);
 		public static final MutableComponent RESET_BUTTON_TEXT_ACTIVE = Component.translatable("options.iris.reset").withStyle(ChatFormatting.YELLOW);
@@ -273,7 +167,7 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 			Font font = Minecraft.getInstance().font;
 
 			// Draw header text
-			renderScrollingString(guiGraphics, font, text, x + (int) (entryWidth * 0.5), x + 5, y + 5, ((x + entryWidth) - 10) - utilityButtons.getWidth(), y + 15, 0xFFFFFF);
+			guiGraphics.drawCenteredString(font, text, x + (int) (entryWidth * 0.5), y + 5, 0xFFFFFF);
 
 			GuiUtil.bindIrisWidgetsTexture();
 
@@ -364,7 +258,7 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 			GuiUtil.playButtonClickSound();
 
 			// Invalid state to be in
-			if (Iris.getCurrentPack().isEmpty()) {
+			if (!Iris.getCurrentPack().isPresent()) {
 				return false;
 			}
 
@@ -402,7 +296,7 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 			GuiUtil.playButtonClickSound();
 
 			// Invalid state to be in
-			if (Iris.getCurrentPack().isEmpty()) {
+			if (!Iris.getCurrentPack().isPresent()) {
 				return false;
 			}
 
@@ -449,6 +343,71 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 				});
 
 			return true;
+		}
+	}
+
+	public static class ElementRowEntry extends BaseEntry {
+		private final List<AbstractElementWidget<?>> widgets;
+		private final ShaderPackScreen screen;
+
+		private int cachedWidth;
+		private int cachedPosX;
+
+		public ElementRowEntry(ShaderPackScreen screen, NavigationController navigation, List<AbstractElementWidget<?>> widgets) {
+			super(navigation);
+
+			this.screen = screen;
+			this.widgets = widgets;
+		}
+
+		@Override
+		public void render(GuiGraphics guiGraphics, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+			this.cachedWidth = entryWidth;
+			this.cachedPosX = x;
+
+			// The amount of space widgets will occupy, excluding margins. Will be divided up between widgets.
+			int totalWidthWithoutMargins = entryWidth - (2 * (widgets.size() - 1));
+
+			totalWidthWithoutMargins -= 3; // Centers it for some reason
+
+			// Width of a single widget
+			float singleWidgetWidth = (float) totalWidthWithoutMargins / widgets.size();
+
+			for (int i = 0; i < widgets.size(); i++) {
+				AbstractElementWidget<?> widget = widgets.get(i);
+				boolean widgetHovered = (hovered && (getHoveredWidget(mouseX) == i)) || getFocused() == widget;
+
+				widget.bounds = new ScreenRectangle(x + (int) ((singleWidgetWidth + 2) * i), y, (int) singleWidgetWidth, entryHeight + 2);
+				widget.render(guiGraphics, mouseX, mouseY, tickDelta, widgetHovered);
+
+				screen.setElementHoveredStatus(widget, widgetHovered);
+			}
+		}
+
+		public int getHoveredWidget(int mouseX) {
+			float positionAcrossWidget = ((float) Mth.clamp(mouseX - cachedPosX, 0, cachedWidth)) / cachedWidth;
+
+			return Mth.clamp((int) Math.floor(widgets.size() * positionAcrossWidget), 0, widgets.size() - 1);
+		}
+
+		@Override
+		public boolean mouseClicked(double mouseX, double mouseY, int button) {
+			return this.widgets.get(getHoveredWidget((int) mouseX)).mouseClicked(mouseX, mouseY, button);
+		}
+
+		@Override
+		public boolean mouseReleased(double mouseX, double mouseY, int button) {
+			return this.widgets.get(getHoveredWidget((int) mouseX)).mouseReleased(mouseX, mouseY, button);
+		}
+
+		@Override
+		public @NotNull List<? extends GuiEventListener> children() {
+			return ImmutableList.copyOf(widgets);
+		}
+
+		@Override
+		public @NotNull List<? extends NarratableEntry> narratables() {
+			return ImmutableList.copyOf(widgets);
 		}
 	}
 }

@@ -6,7 +6,7 @@ plugins {
 }
 
 repositories {
-    maven("https://maven.parchmentmc.org/")
+    maven("https://maven.legacyfabric.net/")
 
     exclusiveContent {
         forRepository {
@@ -25,7 +25,8 @@ val MINECRAFT_VERSION: String by rootProject.extra
 val PARCHMENT_VERSION: String? by rootProject.extra
 val FABRIC_LOADER_VERSION: String by rootProject.extra
 val FABRIC_API_VERSION: String by rootProject.extra
-
+val lwjglVersion = "3.3.6"
+val lwjglNatives = "natives-windows"
 sourceSets.create("desktop")
 
 buildConfig {
@@ -47,23 +48,23 @@ buildConfig {
 dependencies {
     minecraft(group = "com.mojang", name = "minecraft", version = MINECRAFT_VERSION)
 
-    mappings(loom.layered() {
-        officialMojangMappings()
-        if (PARCHMENT_VERSION != null) {
-            parchment("org.parchmentmc.data:parchment-${MINECRAFT_VERSION}:${PARCHMENT_VERSION}@zip")
-        }
-    })
-
+    mappings("net.legacyfabric:yarn:1.8.9+build.551:v2")
+    modCompileOnly(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
     modImplementation("net.fabricmc:fabric-loader:$FABRIC_LOADER_VERSION")
 
-    modCompileOnly("net.fabricmc.fabric-api:fabric-renderer-api-v1:3.2.9+1172e897d7")
-
-    modImplementation("maven.modrinth", "sodium", "mc1.21.1-0.6.1-fabric")
+    modImplementation(fileTree("../sodium.jar"))
     modCompileOnly("org.antlr:antlr4-runtime:4.13.1")
     modCompileOnly("io.github.douira:glsl-transformer:2.0.1")
     modCompileOnly("org.anarres:jcpp:1.4.14")
+    modCompileOnly("org.joml:joml:1.10.8")
+    modCompileOnly("it.unimi.dsi:fastutil:8.5.15")
 
-    compileOnly(files(rootDir.resolve("DHApi.jar")))
+    modCompileOnly("org.lwjgl", "lwjgl")
+    modCompileOnly("org.lwjgl", "lwjgl-opengl")
+}
+
+configurations.all {
+    exclude(group = "org.lwjgl.lwjgl")
 }
 
 sourceSets {

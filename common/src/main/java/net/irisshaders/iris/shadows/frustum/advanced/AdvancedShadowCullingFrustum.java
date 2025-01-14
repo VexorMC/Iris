@@ -1,18 +1,13 @@
 package net.irisshaders.iris.shadows.frustum.advanced;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
-import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
-import net.caffeinemc.mods.sodium.client.render.viewport.ViewportProvider;
+import com.seibel.distanthorizons.api.interfaces.override.rendering.IDhApiShadowCullingFrustum;
 import net.irisshaders.iris.shadows.frustum.BoxCuller;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
+import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
-import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
-import java.lang.management.ManagementFactory;
 
 /**
  * A Frustum implementation that derives a tightly-fitted shadow pass frustum based on the player's camera frustum and
@@ -34,7 +29,7 @@ import java.lang.management.ManagementFactory;
  * are not sensitive to the specific internal ordering of planes and corners, in order to avoid potential bugs at the
  * cost of slightly more computations.</p>
  */
-public class AdvancedShadowCullingFrustum extends Frustum implements net.caffeinemc.mods.sodium.client.render.viewport.frustum.Frustum, ViewportProvider {
+public class AdvancedShadowCullingFrustum extends Frustum {
 	private static final int MAX_CLIPPING_PLANES = 13;
 	protected final BoxCuller boxCuller;
 	/**
@@ -65,29 +60,21 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 	 * </ul>
 	 * </p>
 	 */
-	private final float[][] planes = new float[MAX_CLIPPING_PLANES][4];
+	private final Vector4f[] planes = new Vector4f[MAX_CLIPPING_PLANES];
 	private final Vector3f shadowLightVectorFromOrigin;
-	private final Vector3d position = new Vector3d();
 	// The center coordinates of this frustum.
 	public double x;
 	public double y;
 	public double z;
 	private int planeCount = 0;
 
-	public AdvancedShadowCullingFrustum(Matrix4fc modelViewProjection, Matrix4fc shadowProjection, Vector3f shadowLightVectorFromOrigin,
+	public AdvancedShadowCullingFrustum(Matrix4fc playerView, Matrix4fc playerProjection, Vector3f shadowLightVectorFromOrigin,
 										BoxCuller boxCuller) {
 		// We're overriding all of the methods, don't pass any matrices down.
 		super(new org.joml.Matrix4f(), new org.joml.Matrix4f());
 
-
-		/*
-			testing code, please ignore
-			System.out.println(shadowProjection.toString(NumberFormat.getNumberInstance()));
-			System.out.println(modelViewProjection.toString(NumberFormat.getNumberInstance()));
-		 */
-
 		this.shadowLightVectorFromOrigin = shadowLightVectorFromOrigin;
-		BaseClippingPlanes baseClippingPlanes = new BaseClippingPlanes(modelViewProjection);
+		BaseClippingPlanes baseClippingPlanes = new BaseClippingPlanes(playerView, playerProjection);
 
 		boolean[] isBack = addBackPlanes(baseClippingPlanes);
 		addEdgePlanes(baseClippingPlanes, isBack);
@@ -95,7 +82,7 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 		this.boxCuller = boxCuller;
 	}
 
-	private void addPlane(float[] plane) {
+	private void addPlane(Vector4f plane) {
 		planes[planeCount] = plane;
 		planeCount += 1;
 	}
@@ -128,7 +115,7 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 			isBack[planeIndex] = back;
 
 			if (back || edge) {
-				addPlane(new float[] { plane.x, plane.y, plane.z, plane.w });
+				addPlane(plane);
 			}
 		}
 
@@ -274,7 +261,7 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 			}
 		}*/
 
-		addPlane(new float[] { plane.x, plane.y, plane.z, plane.w });
+		addPlane(plane);
 	}
 
 	// Note: These functions are copied & modified from the vanilla Frustum class.
@@ -323,24 +310,6 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 		return this.checkCornerVisibility(f, g, h, i, j, k);
 	}
 
-	private static final boolean FMA_SUPPORT;
-
-	static {
-		// Automatically enable `joml.useMathFma` system property if JVM UseFMA is enabled.
-		// The JVM will automatically enable the UseFMA vm option if the cpu supports it.
-		// Thanks to kunzite for making me aware of this.
-		final HotSpotDiagnosticMXBean hotSpotDiagnostic = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-		if (hotSpotDiagnostic == null) {
-			FMA_SUPPORT = false;
-		} else {
-			final VMOption useFMAVMOption = hotSpotDiagnostic.getVMOption("UseFMA");
-			FMA_SUPPORT = Boolean.parseBoolean(useFMAVMOption.getValue());
-		}
-	}
-
-	private static float safeFMA(float a, float b, float c) {
-		return a * b + c;
-	}
 
 	/**
 	 * Checks corner visibility.
@@ -354,40 +323,25 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 	 * @return 0 if nothing is visible, 1 if everything is visible, 2 if only some corners are visible.
 	 */
 	protected int checkCornerVisibility(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
-		boolean inside = true;
-
 		for (int i = 0; i < planeCount; ++i) {
-			float[] plane = this.planes[i];
+			Vector4f plane = this.planes[i];
 
 			// Check if plane is inside or intersecting.
 			// This is ported from JOML's FrustumIntersection.
 
-			float outsideBoundX = (plane[0] < 0) ? minX : maxX;
-			float outsideBoundY = (plane[1] < 0) ? minY : maxY;
-			float outsideBoundZ = (plane[2] < 0) ? minZ : maxZ;
+			float outsideBoundX = (plane.x() < 0) ? minX : maxX;
+			float outsideBoundY = (plane.y() < 0) ? minY : maxY;
+			float outsideBoundZ = (plane.z() < 0) ? minZ : maxZ;
 
 			// Use Math.fma for the dot product calculation to get vectorization (sorry old Intel users)
-			if (FMA_SUPPORT) {
-				if (Math.fma(plane[0], outsideBoundX, Math.fma(plane[1], outsideBoundY, plane[2] * outsideBoundZ)) >= -plane[3]) {
-					inside &= Math.fma(plane[0], (plane[0] < 0 ? maxX : minX),
-						Math.fma(plane[1], (plane[1] < 0 ? maxY : minY),
-							Math.fma(plane[2], (plane[2] < 0 ? maxZ : minZ), plane[3]))) >= 0;
-				} else {
-					return 0;
-				}
-			} else {
-				if (safeFMA(plane[0], outsideBoundX, safeFMA(plane[1], outsideBoundY, plane[2] * outsideBoundZ)) >= -plane[3]) {
-					inside &= safeFMA(plane[0], (plane[0] < 0 ? maxX : minX),
-						safeFMA(plane[1], (plane[1] < 0 ? maxY : minY),
-							safeFMA(plane[2], (plane[2] < 0 ? maxZ : minZ), plane[3]))) >= 0;
-				} else {
-					return 0;
-				}
+			if (Math.fma(plane.x(), outsideBoundX, Math.fma(plane.y(), outsideBoundY, plane.z() * outsideBoundZ)) < -plane.w()) {
+				return 0;
 			}
 		}
 
-		return inside ? 1 : 2;
+		return 2;
 	}
+
 
 	/**
 	 * Checks corner visibility.
@@ -402,27 +356,11 @@ public class AdvancedShadowCullingFrustum extends Frustum implements net.caffein
 	 */
 	public boolean checkCornerVisibilityBool(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
 		for (int i = 0; i < planeCount; ++i) {
-			float[] plane = planes[i];
-
-			float outsideBoundX = (plane[0] < 0) ? minX : maxX;
-			float outsideBoundY = (plane[1] < 0) ? minY : maxY;
-			float outsideBoundZ = (plane[2] < 0) ? minZ : maxZ;
-
-			if (Math.fma(plane[0], outsideBoundX, Math.fma(plane[1], outsideBoundY, plane[2] * outsideBoundZ)) < -plane[3]) {
+			if (planes[i].x * (planes[i].x < 0 ? minX : maxX) + planes[i].y * (planes[i].y < 0 ? minY : maxY) + planes[i].z * (planes[i].z < 0 ? minZ : maxZ) < -planes[i].w) {
 				return false;
 			}
 		}
 
 		return true;
-	}
-
-	@Override
-	public boolean testAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
-		return (boxCuller == null || !boxCuller.isCulledSodium(minX, minY, minZ, maxX, maxY, maxZ)) && this.checkCornerVisibility(minX, minY, minZ, maxX, maxY, maxZ) > 0;
-	}
-
-	@Override
-	public Viewport sodium$createViewport() {
-		return new Viewport(this, position.set(x, y, z));
 	}
 }

@@ -7,10 +7,12 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import java.util.function.Consumer;
 
 public class ShadowDistanceOption<T> extends OptionInstance<T> {
+	private final TooltipSupplier<T> tooltipSupplier;
 
 	public ShadowDistanceOption(String string, TooltipSupplier<T> arg, CaptionBasedToString<T> arg2, OptionInstance.ValueSet<T> arg3, T object, Consumer<T> consumer) {
 		super(string, arg, arg2, arg3, object, consumer);
 
+		this.tooltipSupplier = arg;
 	}
 
 	@Override

@@ -1,8 +1,9 @@
 package net.irisshaders.iris.pipeline.programs;
 
+import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.irisshaders.iris.gl.blending.AlphaTest;
 import net.irisshaders.iris.gl.blending.AlphaTests;
 import net.irisshaders.iris.gl.state.FogMode;
@@ -10,17 +11,14 @@ import net.irisshaders.iris.shaderpack.loading.ProgramId;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 
 import java.util.Locale;
-import java.util.Set;
 
 public enum ShaderKey {
 	// if you auto-format this and destroy all the manual indentation, I'll steal your kneecaps
-	// update: sorry - ims
 
 	BASIC(ProgramId.Basic, AlphaTests.OFF, DefaultVertexFormat.POSITION, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
 	BASIC_COLOR(ProgramId.Basic, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
 	TEXTURED(ProgramId.Textured, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_TEX, FogMode.OFF, LightingModel.LIGHTMAP),
 	TEXTURED_COLOR(ProgramId.Textured, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_TEX_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
-	SPS(ProgramId.SpiderEyes, AlphaTests.OFF, DefaultVertexFormat.POSITION_TEX_COLOR, FogMode.PER_FRAGMENT, LightingModel.FULLBRIGHT),
 	SKY_BASIC(ProgramId.SkyBasic, AlphaTests.OFF, DefaultVertexFormat.POSITION, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
 	SKY_BASIC_COLOR(ProgramId.SkyBasic, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
 	SKY_TEXTURED(ProgramId.SkyTextured, AlphaTests.OFF, DefaultVertexFormat.POSITION_TEX, FogMode.OFF, LightingModel.LIGHTMAP),
@@ -67,14 +65,12 @@ public enum ShaderKey {
 	GLINT(ProgramId.ArmorGlint, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_TEX, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
 	LINES(ProgramId.Line, AlphaTests.OFF, DefaultVertexFormat.POSITION_COLOR_NORMAL, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
 	IE_COMPAT(ProgramId.Block, AlphaTests.ONE_TENTH_ALPHA, ShaderAccess.IE_FORMAT, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
-	MEKANISM_FLAME(ProgramId.SpiderEyes, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_TEX_COLOR, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
+	MEKANISM_FLAME(ProgramId.SpiderEyes, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_COLOR_TEX, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
 
 	// Note: These must be at the very end (NewWorldRenderingPipeline implementation details)
-	SHADOW_TERRAIN_CUTOUT(ProgramId.ShadowCutout, AlphaTests.ONE_TENTH_ALPHA, IrisVertexFormats.TERRAIN, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_TRANSLUCENT(ProgramId.ShadowWater, AlphaTests.ONE_TENTH_ALPHA, IrisVertexFormats.TERRAIN, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_ENTITIES_CUTOUT(ProgramId.ShadowEntities, AlphaTests.ONE_TENTH_ALPHA, IrisVertexFormats.ENTITY, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_BLOCK(ProgramId.ShadowBlock, AlphaTests.ONE_TENTH_ALPHA, IrisVertexFormats.ENTITY, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_BEACON_BEAM(ProgramId.ShadowEntities, AlphaTests.OFF, DefaultVertexFormat.BLOCK, FogMode.OFF, LightingModel.FULLBRIGHT),
+	SHADOW_TERRAIN_CUTOUT(ProgramId.Shadow, AlphaTests.ONE_TENTH_ALPHA, IrisVertexFormats.TERRAIN, FogMode.OFF, LightingModel.LIGHTMAP),
+	SHADOW_ENTITIES_CUTOUT(ProgramId.Shadow, AlphaTests.ONE_TENTH_ALPHA, IrisVertexFormats.ENTITY, FogMode.OFF, LightingModel.LIGHTMAP),
+	SHADOW_BEACON_BEAM(ProgramId.Shadow, AlphaTests.OFF, DefaultVertexFormat.BLOCK, FogMode.OFF, LightingModel.FULLBRIGHT),
 	SHADOW_BASIC(ProgramId.Shadow, AlphaTests.OFF, DefaultVertexFormat.POSITION, FogMode.OFF, LightingModel.LIGHTMAP),
 	SHADOW_BASIC_COLOR(ProgramId.Shadow, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
 	SHADOW_TEX(ProgramId.Shadow, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_TEX, FogMode.OFF, LightingModel.LIGHTMAP),
@@ -82,13 +78,13 @@ public enum ShaderKey {
 	SHADOW_CLOUDS(ProgramId.Shadow, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL, FogMode.OFF, LightingModel.LIGHTMAP),
 	SHADOW_LINES(ProgramId.Shadow, AlphaTests.OFF, DefaultVertexFormat.POSITION_COLOR_NORMAL, FogMode.OFF, LightingModel.LIGHTMAP),
 	SHADOW_LEASH(ProgramId.Shadow, AlphaTests.OFF, DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_LIGHTNING(ProgramId.ShadowLightning, AlphaTests.OFF, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.FULLBRIGHT),
+	SHADOW_LIGHTNING(ProgramId.Shadow, AlphaTests.OFF, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.FULLBRIGHT),
 	SHADOW_PARTICLES(ProgramId.Shadow, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.PARTICLE, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_TEXT(ProgramId.ShadowEntities, AlphaTests.NON_ZERO_ALPHA, IrisVertexFormats.GLYPH, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_TEXT_BG(ProgramId.ShadowEntities, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, FogMode.OFF, LightingModel.LIGHTMAP),
-	SHADOW_TEXT_INTENSITY(ProgramId.ShadowEntities, AlphaTests.NON_ZERO_ALPHA, IrisVertexFormats.GLYPH, FogMode.OFF, LightingModel.LIGHTMAP),
-	IE_COMPAT_SHADOW(ProgramId.ShadowEntities, AlphaTests.ONE_TENTH_ALPHA, ShaderAccess.IE_FORMAT, FogMode.OFF, LightingModel.LIGHTMAP),
-	MEKANISM_FLAME_SHADOW(ProgramId.ShadowEntities, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_TEX_COLOR, FogMode.OFF, LightingModel.LIGHTMAP);
+	SHADOW_TEXT(ProgramId.Shadow, AlphaTests.NON_ZERO_ALPHA, IrisVertexFormats.GLYPH, FogMode.OFF, LightingModel.LIGHTMAP),
+	SHADOW_TEXT_BG(ProgramId.Shadow, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, FogMode.OFF, LightingModel.LIGHTMAP),
+	SHADOW_TEXT_INTENSITY(ProgramId.Shadow, AlphaTests.NON_ZERO_ALPHA, IrisVertexFormats.GLYPH, FogMode.OFF, LightingModel.LIGHTMAP),
+	IE_COMPAT_SHADOW(ProgramId.Shadow, AlphaTests.ONE_TENTH_ALPHA, ShaderAccess.IE_FORMAT, FogMode.OFF, LightingModel.LIGHTMAP),
+	MEKANISM_FLAME_SHADOW(ProgramId.Shadow, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_COLOR_TEX, FogMode.OFF, LightingModel.LIGHTMAP);
 
 	private final ProgramId program;
 	private final AlphaTest alphaTest;
@@ -129,13 +125,7 @@ public enum ShaderKey {
 	}
 
 	public boolean isShadow() {
-		return this.getProgram() == ProgramId.Shadow
-			|| this.getProgram() == ProgramId.ShadowCutout
-			|| this.getProgram() == ProgramId.ShadowWater
-			|| this.getProgram() == ProgramId.ShadowSolid
-			|| this.getProgram() == ProgramId.ShadowEntities
-			|| this.getProgram() == ProgramId.ShadowLightning
-			|| this.getProgram() == ProgramId.ShadowBlock;
+		return this.getProgram() == ProgramId.Shadow;
 	}
 
 	public boolean hasDiffuseLighting() {

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.irisshaders.iris.platform.IrisPlatformHelpers;
 import net.irisshaders.iris.gl.blending.AlphaTest;
 import net.irisshaders.iris.gl.blending.BlendModeOverride;
 import net.irisshaders.iris.gl.blending.BufferBlendOverride;
@@ -16,7 +17,6 @@ import net.irisshaders.iris.pipeline.fallback.ShaderSynthesizer;
 import net.irisshaders.iris.pipeline.transform.PatchShaderType;
 import net.irisshaders.iris.pipeline.transform.ShaderPrinter;
 import net.irisshaders.iris.pipeline.transform.TransformPatcher;
-import net.irisshaders.iris.platform.IrisPlatformHelpers;
 import net.irisshaders.iris.shaderpack.loading.ProgramId;
 import net.irisshaders.iris.shaderpack.programs.ProgramSource;
 import net.irisshaders.iris.uniforms.CommonUniforms;
@@ -24,11 +24,10 @@ import net.irisshaders.iris.uniforms.FrameUpdateNotifier;
 import net.irisshaders.iris.uniforms.VanillaUniforms;
 import net.irisshaders.iris.uniforms.builtin.BuiltinReplacementUniforms;
 import net.irisshaders.iris.uniforms.custom.CustomUniforms;
+import net.irisshaders.iris.platform.IrisPlatformHelpers;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PathPackResources;
-import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
@@ -135,7 +134,9 @@ public class ShaderCreator {
 			customUniforms.assignTo(uniforms);
 			BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
 			VanillaUniforms.addVanillaUniforms(uniforms);
-		}, (samplerHolder, imageHolder) -> parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass, inputs.hasTex(), inputs.hasLight(), inputs.hasOverlay()), isIntensity, parent, overrides, customUniforms);
+		}, (samplerHolder, imageHolder) -> {
+			parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass, inputs.hasTex(), inputs.hasLight(), inputs.hasOverlay());
+		}, isIntensity, parent, overrides, customUniforms);
 	}
 
 	public static FallbackShader createFallback(String name, GlFramebuffer writingToBeforeTranslucent,
@@ -237,8 +238,8 @@ public class ShaderCreator {
 		private final String content;
 
 		private StringResource(ResourceLocation id, String content) {
-			super(new PathPackResources(new PackLocationInfo("<iris shaderpack shaders>", Component.literal("iris"), PackSource.BUILT_IN, Optional.of(new KnownPack("iris", "shader", "1.0"))), IrisPlatformHelpers.getInstance().getConfigDir()), () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-			this.content = content;
+			super(new PathPackResources("<iris shaderpack shaders>", IrisPlatformHelpers.getInstance().getConfigDir(), false), () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+            this.content = content;
 		}
 
 		@Override

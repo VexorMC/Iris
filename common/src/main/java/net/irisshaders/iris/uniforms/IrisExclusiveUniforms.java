@@ -64,7 +64,7 @@ public class IrisExclusiveUniforms {
 			if (Minecraft.getInstance().level != null) {
 				return StreamSupport.stream(Minecraft.getInstance().level.entitiesForRendering().spliterator(), false).filter(bolt -> bolt instanceof LightningBolt).findAny().map(bolt -> {
 					Vector3d unshiftedCameraPosition = CameraUniforms.getUnshiftedCameraPosition();
-					Vec3 vec3 = bolt.getPosition(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true));
+					Vec3 vec3 = bolt.getPosition(Minecraft.getInstance().getDeltaFrameTime());
 					return new Vector4f((float) (vec3.x - unshiftedCameraPosition.x), (float) (vec3.y - unshiftedCameraPosition.y), (float) (vec3.z - unshiftedCameraPosition.z), 1);
 				}).orElse(zero);
 			} else {
@@ -76,7 +76,7 @@ public class IrisExclusiveUniforms {
 	private static int getCurrentSelectedBlockId() {
 		HitResult hitResult = Minecraft.getInstance().hitResult;
 		if (Minecraft.getInstance().level != null && ((GameRendererAccessor) Minecraft.getInstance().gameRenderer).shouldRenderBlockOutlineA() && hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) {
-			BlockPos blockPos4 = ((BlockHitResult) hitResult).getBlockPos();
+			BlockPos blockPos4 = ((BlockHitResult)hitResult).getBlockPos();
 			BlockState blockState = Minecraft.getInstance().level.getBlockState(blockPos4);
 			if (!blockState.isAir() && Minecraft.getInstance().level.getWorldBorder().isWithinBounds(blockPos4)) {
 				return WorldRenderingSettings.INSTANCE.getBlockStateIds().getInt(blockState);
@@ -89,7 +89,7 @@ public class IrisExclusiveUniforms {
 	private static Vector3f getCurrentSelectedBlockPos() {
 		HitResult hitResult = Minecraft.getInstance().hitResult;
 		if (Minecraft.getInstance().level != null && ((GameRendererAccessor) Minecraft.getInstance().gameRenderer).shouldRenderBlockOutlineA() && hitResult != null && hitResult.getType() == HitResult.Type.BLOCK) {
-			BlockPos blockPos4 = ((BlockHitResult) hitResult).getBlockPos();
+			BlockPos blockPos4 = ((BlockHitResult)hitResult).getBlockPos();
 			return blockPos4.getCenter().subtract(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition()).toVector3f();
 		}
 

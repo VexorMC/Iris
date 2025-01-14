@@ -35,8 +35,8 @@ public class CenterDepthSampler {
 	private boolean destroyed;
 
 	public CenterDepthSampler(IntSupplier depthSupplier, float halfLife) {
-		this.texture = GlStateManager._genTexture();
-		this.altTexture = GlStateManager._genTexture();
+		this.texture = GlStateManager.genTexture();
+		this.altTexture = GlStateManager.genTexture();
 		this.framebuffer = new GlFramebuffer();
 
 		InternalTextureFormat format = InternalTextureFormat.R32F;
@@ -109,8 +109,8 @@ public class CenterDepthSampler {
 	}
 
 	public void destroy() {
-		GlStateManager._deleteTexture(texture);
-		GlStateManager._deleteTexture(altTexture);
+		GlStateManager.deleteTexture(texture);
+		GlStateManager.deleteTexture(altTexture);
 		framebuffer.destroy();
 		program.destroy();
 		destroyed = true;

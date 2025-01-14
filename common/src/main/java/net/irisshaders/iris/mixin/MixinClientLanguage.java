@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,7 +35,6 @@ import java.util.Map;
  */
 @Mixin(value = ClientLanguage.class, priority = 990)
 public class MixinClientLanguage {
-	@Unique
 	private static final String LOAD = "Lnet/minecraft/client/resources/language/ClientLanguage;loadFrom(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/List;)Lnet/minecraft/client/resources/language/ClientLanguage;";
 
 	// This is needed to keep track of which language code we need to grab our lang files from
@@ -47,7 +47,7 @@ public class MixinClientLanguage {
 	@Final
 	private Map<String, String> storage;
 
-	@Inject(method = "appendFrom", at = @At(value = "HEAD"))
+	@Inject(method = "appendFrom", at = @At(value = "HEAD"), locals = LocalCapture.CAPTURE_FAILHARD)
 	private static void injectFrom(String string, List<Resource> list, Map<String, String> map, CallbackInfo ci) {
 		String json = String.format(Locale.ROOT, "lang/%s.json", string);
 		if (Iris.class.getResource("/assets/iris/" + json) != null) {

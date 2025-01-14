@@ -66,7 +66,7 @@ public class Parser {
 
 	private Element peek() {
 		if (!this.stack.isEmpty()) {
-			return this.stack.getLast();
+			return this.stack.get(this.stack.size() - 1);
 		}
 
 		return null;
@@ -77,7 +77,7 @@ public class Parser {
 			throw new IllegalStateException("Internal token stack is empty");
 		}
 
-		return this.stack.removeLast();
+		return this.stack.remove(this.stack.size() - 1);
 	}
 
 	private void push(Element element) {
@@ -236,7 +236,7 @@ public class Parser {
 			} else if (!expressionOnTop) {
 				throw new UnexpectedTokenException("Encountered a trailing comma in brackets that aren't a call", index);
 			} else {
-				this.push(args.tokens.getFirst());
+				this.push(args.tokens.get(0));
 			}
 		}
 	}
@@ -260,7 +260,7 @@ public class Parser {
 	 */
 	void visitBinaryOperator(BinaryOp binaryOp) {
 		// reduce the expressions to the needed priority level
-		ExpressionElement left = this.expressionReducePop(binaryOp.priority());
+		ExpressionElement left = this.expressionReducePop(binaryOp.getPriority());
 		// stack[ {'a', '*'}, 'b'], token = '+' -> stack[], left = {'a', '*', 'b'}
 		//                                      -> stack[{{'a', '*', 'b'}, '+'}]
 		// stack[ {'a', '+'}, 'b'], token = '+' -> stack[], left = {'a', '+', 'b'}

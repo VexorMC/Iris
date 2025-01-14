@@ -22,6 +22,8 @@ repositories {
             includeGroup("maven.modrinth")
         }
     }
+
+    maven("https://maven.legacyfabric.net/")
 }
 
 base {
@@ -30,43 +32,22 @@ base {
 
 dependencies {
     minecraft("com.mojang:minecraft:${MINECRAFT_VERSION}")
-    mappings(loom.layered {
-        officialMojangMappings()
-        if (PARCHMENT_VERSION != null) {
-            parchment("org.parchmentmc.data:parchment-${MINECRAFT_VERSION}:${PARCHMENT_VERSION}@zip")
-        }
-    })
+    mappings("net.legacyfabric:yarn:1.8.9+build.551:v2")
     modImplementation("net.fabricmc:fabric-loader:$FABRIC_LOADER_VERSION")
-
-    fun addRuntimeFabricModule(name: String) {
-        val module = fabricApi.module(name, FABRIC_API_VERSION)
-        modRuntimeOnly(module)
-    }
-
-    fun addEmbeddedFabricModule(name: String) {
-        val module = fabricApi.module(name, FABRIC_API_VERSION)
-        modImplementation(module)
-        include(module)
-    }
 
     fun implementAndInclude(name: String) {
         modImplementation(name)
         include(name)
     }
 
-    // Fabric API modules
-    addEmbeddedFabricModule("fabric-api-base")
-    addEmbeddedFabricModule("fabric-key-binding-api-v1")
-    addRuntimeFabricModule("fabric-block-view-api-v2")
-    addRuntimeFabricModule("fabric-renderer-api-v1")
-    addRuntimeFabricModule("fabric-rendering-data-attachment-v1")
-    addRuntimeFabricModule("fabric-rendering-fluids-v1")
-    addRuntimeFabricModule("fabric-resource-loader-v0")
 
-    modImplementation("maven.modrinth", "sodium", "mc1.21.1-0.6.1-fabric")
+
+    //modImplementation("maven.modrinth", "sodium", "mc1.21.1-0.6.1-fabric")
     implementAndInclude("org.antlr:antlr4-runtime:4.13.1")
     implementAndInclude("io.github.douira:glsl-transformer:2.0.1")
     implementAndInclude("org.anarres:jcpp:1.4.14")
+    implementAndInclude("org.joml:joml:1.10.8")
+    implementAndInclude("it.unimi.dsi:fastutil:8.5.15")
 
     implementation(project.project(":common").sourceSets.getByName("vendored").output)
     implementation(project.project(":common").sourceSets.getByName("api").output)

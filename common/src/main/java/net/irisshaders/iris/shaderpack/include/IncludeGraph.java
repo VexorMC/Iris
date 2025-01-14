@@ -64,7 +64,7 @@ public class IncludeGraph {
 		this.failures = failures;
 	}
 
-	public IncludeGraph(Path root, ImmutableList<AbsolutePackPath> startingPaths, boolean isZip) {
+	public IncludeGraph(Path root, ImmutableList<AbsolutePackPath> startingPaths) {
 		Map<AbsolutePackPath, AbsolutePackPath> cameFrom = new HashMap<>();
 		Map<AbsolutePackPath, Integer> lineNumberInclude = new HashMap<>();
 
@@ -75,23 +75,12 @@ public class IncludeGraph {
 		Set<AbsolutePackPath> seen = new HashSet<>(startingPaths);
 
 		while (!queue.isEmpty()) {
-			AbsolutePackPath next = queue.removeLast();
+			AbsolutePackPath next = queue.remove(queue.size() - 1);
 
 			String source;
 
 			try {
-				Path p = next.resolved(root);
-				if (Iris.getIrisConfig().areDebugOptionsEnabled() && !isZip) {
-					String absolute = p.toAbsolutePath().toString().replace("\\", "/");
-					absolute = absolute.substring(absolute.lastIndexOf("shaders/") + 8);
-
-					String canonical = p.toFile().getCanonicalPath().replace("\\", "/");
-					canonical = canonical.substring(canonical.lastIndexOf("shaders/") + 8);
-					if (!absolute.equals(canonical)) {
-						throw new FileIncludeException("'" + next.getPathString() + "' doesn't exist, did you mean '" + canonical + "'?");
-					}
-				}
-				source = readFile(p);
+				source = readFile(next.resolved(root));
 			} catch (IOException e) {
 				AbsolutePackPath src = cameFrom.get(next);
 
@@ -101,10 +90,8 @@ public class IncludeGraph {
 
 				String topLevelMessage;
 				String detailMessage;
-				if (e instanceof FileIncludeException) {
-					topLevelMessage = "failed to resolve #include directive\n" + e.getMessage();
-					detailMessage = "file not found";
-				} else if (e instanceof NoSuchFileException) {
+
+				if (e instanceof NoSuchFileException) {
 					topLevelMessage = "failed to resolve #include directive";
 					detailMessage = "file not found";
 				} else {
@@ -236,7 +223,7 @@ public class IncludeGraph {
 			}
 		}
 
-		path.removeLast();
+		path.remove(path.size() - 1);
 		visited.remove(frontier);
 
 		return false;

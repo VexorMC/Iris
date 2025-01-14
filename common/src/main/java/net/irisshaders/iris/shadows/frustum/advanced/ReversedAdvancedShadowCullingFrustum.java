@@ -1,16 +1,16 @@
 package net.irisshaders.iris.shadows.frustum.advanced;
 
-import net.caffeinemc.mods.sodium.client.render.viewport.frustum.Frustum;
 import net.irisshaders.iris.shadows.frustum.BoxCuller;
 import net.minecraft.world.phys.AABB;
+import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 
-public class ReversedAdvancedShadowCullingFrustum extends AdvancedShadowCullingFrustum implements Frustum {
+public class ReversedAdvancedShadowCullingFrustum extends AdvancedShadowCullingFrustum {
 	private final BoxCuller distanceCuller;
 
-	public ReversedAdvancedShadowCullingFrustum(Matrix4fc modelViewProjection, Matrix4fc shadowProjection, Vector3f shadowLightVectorFromOrigin, BoxCuller voxelCuller, BoxCuller distanceCuller) {
-		super(modelViewProjection, shadowProjection, shadowLightVectorFromOrigin, voxelCuller);
+	public ReversedAdvancedShadowCullingFrustum(Matrix4fc playerView, Matrix4fc playerProjection, Vector3f shadowLightVectorFromOrigin, BoxCuller voxelCuller, BoxCuller distanceCuller) {
+		super(playerView, playerProjection, shadowLightVectorFromOrigin, voxelCuller);
 		this.distanceCuller = distanceCuller;
 	}
 
@@ -48,7 +48,6 @@ public class ReversedAdvancedShadowCullingFrustum extends AdvancedShadowCullingF
 		return isVisible(minX, minY, minZ, maxX, maxY, maxZ);
 	}
 
-	@Override
 	public boolean testAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
 		if (distanceCuller != null && distanceCuller.isCulledSodium(minX, minY, minZ, maxX, maxY, maxZ)) {
 			return false;

@@ -1,5 +1,7 @@
 package net.irisshaders.iris.pipeline.programs;
 
+import com.google.common.collect.ImmutableMap;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.irisshaders.iris.Iris;
@@ -10,13 +12,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 
 public class ShaderAccess {
-	public static final VertexFormat IE_FORMAT = VertexFormat.builder()
-		.add("Position", VertexFormatElement.POSITION)
-		.add("Color", VertexFormatElement.COLOR)
-		.add("UV0", VertexFormatElement.UV0)
-		.add("Normal", VertexFormatElement.NORMAL)
-		.padding(1)
-		.build();
+	public static final VertexFormat IE_FORMAT = new VertexFormat(ImmutableMap.<String, VertexFormatElement>builder().put("Position", DefaultVertexFormat.ELEMENT_POSITION).put("Color", DefaultVertexFormat.ELEMENT_COLOR).put("UV0", DefaultVertexFormat.ELEMENT_UV0).put("Normal", DefaultVertexFormat.ELEMENT_NORMAL).put("Padding", DefaultVertexFormat.ELEMENT_PADDING).build());
 
 	public static ShaderInstance getParticleTranslucentShader() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
@@ -43,7 +39,7 @@ public class ShaderAccess {
 		return null;
 	}
 
-	public static ShaderInstance getMekanismFlameShader() {
+    public static ShaderInstance getMekanismFlameShader() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
 		if (pipeline instanceof ShaderRenderingPipeline) {
@@ -51,24 +47,14 @@ public class ShaderAccess {
 			return ((ShaderRenderingPipeline) pipeline).getShaderMap().getShader(ShadowRenderingState.areShadowsCurrentlyBeingRendered() ? ShaderKey.MEKANISM_FLAME_SHADOW : ShaderKey.MEKANISM_FLAME);
 		}
 
-		return GameRenderer.getPositionTexColorShader();
-	}
+		return GameRenderer.getPositionColorTexShader();
+    }
 
 	public static ShaderInstance getMekasuitShader() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
 
 		if (pipeline instanceof ShaderRenderingPipeline) {
 			return ((ShaderRenderingPipeline) pipeline).getShaderMap().getShader(ShadowRenderingState.areShadowsCurrentlyBeingRendered() ? ShaderKey.SHADOW_ENTITIES_CUTOUT : ShaderKey.ENTITIES_TRANSLUCENT);
-		}
-
-		return GameRenderer.getRendertypeEntityCutoutShader();
-	}
-
-	public static ShaderInstance getSPSShader() {
-		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
-
-		if (pipeline instanceof ShaderRenderingPipeline) {
-			return ((ShaderRenderingPipeline) pipeline).getShaderMap().getShader(ShadowRenderingState.areShadowsCurrentlyBeingRendered() ? ShaderKey.SHADOW_ENTITIES_CUTOUT : ShaderKey.SPS);
 		}
 
 		return GameRenderer.getRendertypeEntityCutoutShader();

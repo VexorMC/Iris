@@ -6,12 +6,10 @@
 package net.irisshaders.iris.gl;
 
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.platform.IrisPlatformHelpers;
 import org.lwjgl.opengl.AMDDebugOutput;
 import org.lwjgl.opengl.ARBDebugOutput;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL43C;
-import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLDebugMessageAMDCallback;
 import org.lwjgl.opengl.GLDebugMessageARBCallback;
@@ -20,7 +18,6 @@ import org.lwjgl.opengl.KHRDebug;
 import org.lwjgl.system.APIUtil;
 
 import java.io.PrintStream;
-import java.util.Stack;
 import java.util.function.Consumer;
 
 public final class GLDebug {
@@ -34,7 +31,7 @@ public final class GLDebug {
 	public static int setupDebugMessageCallback() {
 		reloadDebugState();
 
-		return setupDebugMessageCallback(System.out);
+		return setupDebugMessageCallback(APIUtil.DEBUG_STREAM);
 	}
 
 	private static void trace(Consumer<String> output) {
@@ -78,7 +75,6 @@ public final class GLDebug {
 
 	public static int setupDebugMessageCallback(PrintStream stream) {
 		GLCapabilities caps = GL.getCapabilities();
-		GL46C.glEnable(GL46C.GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		if (caps.OpenGL43) {
 			Iris.logger.info("[GL] Using OpenGL 4.3 for error logging.");
 			GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) -> {
@@ -315,11 +311,11 @@ public final class GLDebug {
 	}
 
 	public static void pushGroup(int id, String name) {
-		debugState.pushGroup(id, name);
+		//debugState.pushGroup(id, name);
 	}
 
 	public static void popGroup() {
-		debugState.popGroup();
+		//debugState.popGroup();
 	}
 
 	private interface DebugState {
@@ -331,10 +327,7 @@ public final class GLDebug {
 	}
 
 	private static class KHRDebugState implements DebugState {
-		// Let's see how bad this goes
-		private static final boolean ENABLE_DEBUG_GROUPS = true;
 		private int stackSize;
-		private final Stack<String> stack = new Stack<>();
 
 		@Override
 		public void nameObject(int id, int object, String name) {
@@ -343,21 +336,15 @@ public final class GLDebug {
 
 		@Override
 		public void pushGroup(int id, String name) {
-			if (ENABLE_DEBUG_GROUPS) {
-				KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_APPLICATION, id, name);
-				stack.push(name);
-				stackSize += 1;
-			}
+			KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_APPLICATION, id, name);
+			stackSize += 1;
 		}
 
 		@Override
 		public void popGroup() {
-			if (ENABLE_DEBUG_GROUPS) {
-				if (stackSize != 0) {
-					KHRDebug.glPopDebugGroup();
-					stack.pop();
-					stackSize -= 1;
-				}
+			if (stackSize != 0) {
+				KHRDebug.glPopDebugGroup();
+				stackSize -= 1;
 			}
 		}
 	}

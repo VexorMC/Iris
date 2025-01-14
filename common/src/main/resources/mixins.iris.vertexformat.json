@@ -2,8 +2,8 @@
   "required": true,
   "minVersion": "0.8",
   "package": "net.irisshaders.iris.mixin.vertices",
+  "refmap": "iris.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "plugin": "net.irisshaders.iris.mixin.IrisMixinPlugin",
   "refmap": "iris.refmap.json",
   "client": [
     "MixinBufferBuilder",

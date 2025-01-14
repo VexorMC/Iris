@@ -2,17 +2,14 @@ package net.irisshaders.iris.gl.shader;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.GlUtil;
+import dev.vexor.shaders.Util;
+import net.irisshaders.iris.platform.IrisPlatformHelpers;
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.compat.dh.DHCompat;
 import net.irisshaders.iris.helpers.StringPair;
 import net.irisshaders.iris.pathways.HandRenderer;
-import net.irisshaders.iris.pbr.format.TextureFormat;
-import net.irisshaders.iris.pbr.format.TextureFormatLoader;
 import net.irisshaders.iris.pipeline.WorldRenderingPhase;
-import net.irisshaders.iris.platform.IrisPlatformHelpers;
-import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
+import net.irisshaders.iris.texture.format.TextureFormat;
+import net.irisshaders.iris.texture.format.TextureFormatLoader;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20C;
@@ -45,7 +42,6 @@ public class StandardMacros {
 		ArrayList<StringPair> standardDefines = new ArrayList<>();
 
 		define(standardDefines, "MC_VERSION", getMcVersion());
-		define(standardDefines, "MC_MIPMAP_LEVEL", String.valueOf(Minecraft.getInstance().options.mipmapLevels().get()));
 		define(standardDefines, "IRIS_VERSION", getFormattedIrisVersion());
 		define(standardDefines, "MC_GL_VERSION", getGlVersion(GL20C.GL_VERSION));
 		define(standardDefines, "MC_GLSL_VERSION", getGlVersion(GL20C.GL_SHADING_LANGUAGE_VERSION));
@@ -53,13 +49,7 @@ public class StandardMacros {
 		define(standardDefines, getVendor());
 		define(standardDefines, getRenderer());
 		define(standardDefines, "IS_IRIS");
-		define(standardDefines, "IRIS_HAS_TRANSLUCENCY_SORTING");
 		define(standardDefines, "IRIS_TAG_SUPPORT", "2");
-
-
-		if (IrisPlatformHelpers.getInstance().isModLoaded("distanthorizons") && DHCompat.hasRenderingEnabled()) {
-			define(standardDefines, "DISTANT_HORIZONS");
-		}
 
 		if (IrisPlatformHelpers.getInstance().isModLoaded("continuity")) {
 			define(standardDefines, "IRIS_HAS_CONNECTED_TEXTURES");
@@ -140,6 +130,7 @@ public class StandardMacros {
 	 * Gets the current Iris version String in a 5 digit format
 	 *
 	 * @return The Iris version string
+	 *
 	 */
 	public static String getFormattedIrisVersion() {
 		String rawVersion = Iris.getVersion();
@@ -169,6 +160,7 @@ public class StandardMacros {
 	}
 
 	/**
+	 *
 	 * Formats a semver string into a 122 format
 	 *
 	 * @param version The string version to format
@@ -198,7 +190,7 @@ public class StandardMacros {
 	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L705-L707">Optifine Doc for GLSL Version</a>
 	 */
 	public static String getGlVersion(int name) {
-		String info = GlStateManager._getString(name);
+		String info = GL11.glGetString(name);
 
 		Matcher matcher = SEMVER_PATTERN.matcher(Objects.requireNonNull(info));
 
@@ -261,7 +253,7 @@ public class StandardMacros {
 	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L716-L723">Optifine Doc</a>
 	 */
 	public static String getVendor() {
-		String vendor = Objects.requireNonNull(GlUtil.getVendor()).toLowerCase(Locale.ROOT);
+		String vendor = Objects.requireNonNull(GL11.glGetString(GL11.GL_VENDOR)).toLowerCase(Locale.ROOT);
 		if (vendor.startsWith("ati")) {
 			return "MC_GL_VENDOR_ATI";
 		} else if (vendor.startsWith("intel")) {
@@ -283,7 +275,7 @@ public class StandardMacros {
 	 * @see <a href="https://github.com/sp614x/optifine/blob/9c6a5b5326558ccc57c6490b66b3be3b2dc8cbef/OptiFineDoc/doc/shaders.txt#L725-L733">Optifine Doc</a>
 	 */
 	public static String getRenderer() {
-		String renderer = Objects.requireNonNull(GlUtil.getRenderer()).toLowerCase(Locale.ROOT);
+		String renderer = Objects.requireNonNull(GL11.glGetString(GL11.GL_RENDERER)).toLowerCase(Locale.ROOT);
 		if (renderer.startsWith("amd")) {
 			return "MC_GL_RENDERER_RADEON";
 		} else if (renderer.startsWith("ati")) {
@@ -352,9 +344,10 @@ public class StandardMacros {
 	 * @return List of definitions corresponding to the uniform names prefixed with "MC_"
 	 */
 	public static List<String> getIrisDefines() {
+		List<String> defines = new ArrayList<>();
 		// All Iris-exclusive uniforms should have a corresponding definition here. Example:
 		// defines.add("MC_UNIFORM_DRAGON_DEATH_PROGRESS");
 
-		return new ArrayList<>();
+		return defines;
 	}
 }

@@ -13,7 +13,7 @@ in vec2 uv;
 out vec4 outColor;
 #endif
 
-// https://en.wikipedia.org/wiki/Rec._709#Transfer_characteristics
+// https://en.wikipedia.org/wiki/Rec.709#Transfer_characteristics
 vec3 EOTF_Curve(vec3 LinearCV, const float LinearFactor, const float Exponent, const float Alpha, const float Beta) {
     return mix(LinearCV * LinearFactor, clamp(Alpha * pow(LinearCV, vec3(Exponent)) - (Alpha - 1.0), 0.0, 1.0), step(Beta, LinearCV));
 }
@@ -27,13 +27,13 @@ vec3 InverseEOTF_IEC61966(vec3 DisplayCV){
     return max(mix(DisplayCV / 12.92, pow(0.947867 * DisplayCV + 0.0521327, vec3(2.4)), step(0.04045, DisplayCV)), 0.0);
 }
 
-// https://en.wikipedia.org/wiki/Rec._709#Transfer_characteristics
+// https://en.wikipedia.org/wiki/Rec.709#Transfer_characteristics
 vec3 EOTF_BT709(vec3 LinearCV) {
     return EOTF_Curve(LinearCV, 4.5, 0.45, 1.099, 0.018);
     //return mix(LinearCV * 4.5, clamp(pow(LinearCV, vec3(0.45)) * 1.099 - 0.099, 0.0, 1.0), step(0.018, LinearCV));
 }
 
-// https://en.wikipedia.org/wiki/Rec._2020#Transfer_characteristics
+// https://en.wikipedia.org/wiki/Rec.2020#Transfer_characteristics
 vec3 EOTF_BT2020_12Bit(vec3 LinearCV) {
     return EOTF_Curve(LinearCV, 4.5, 0.45, 1.0993, 0.0181);
 }
@@ -126,7 +126,7 @@ void main() {
             TargetColor = EOTF_IEC61966(TargetColor);
 
         #elif CURRENT_COLOR_SPACE == REC2020
-            // https://en.wikipedia.org/wiki/Rec._2020
+            // https://en.wikipedia.org/wiki/Rec.2020
             TargetColor = TargetColor * sRGB_to_REC2020;
             TargetColor = EOTF_BT709(TargetColor);
 

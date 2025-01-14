@@ -23,7 +23,6 @@ import net.irisshaders.iris.gl.state.ShaderAttributeInputs;
 import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.helpers.Tri;
 import net.irisshaders.iris.pipeline.transform.parameter.ComputeParameters;
-import net.irisshaders.iris.pipeline.transform.parameter.DHParameters;
 import net.irisshaders.iris.pipeline.transform.parameter.Parameters;
 import net.irisshaders.iris.pipeline.transform.parameter.SodiumParameters;
 import net.irisshaders.iris.pipeline.transform.parameter.TextureStageParameters;
@@ -69,9 +68,15 @@ import java.util.regex.Pattern;
  * the string, it will throw.
  */
 public class TransformPatcher {
+	private static final boolean useCache = true;
+	private static final Map<CacheKey, Map<PatchShaderType, String>> cache = new LRUCache<>(400);
+	private static final List<String> internalPrefixes = List.of("iris_", "irisMain", "moj_import");
+	private static final Pattern versionPattern = Pattern.compile("^.*#version\\s+(\\d+)", Pattern.DOTALL);
+	private static final EnumASTTransformer<Parameters, PatchShaderType> transformer;
+	static Logger LOGGER = LogManager.getLogger(TransformPatcher.class);
 	// TODO: Only do the NewLines patches if the source code isn't from
 	// gbuffers_lines (what does this mean?)
-	static final TokenFilter<Parameters> parseTokenFilter = new ChannelFilter<>(TokenChannel.PREPROCESSOR) {
+	static TokenFilter<Parameters> parseTokenFilter = new ChannelFilter<>(TokenChannel.PREPROCESSOR) {
 		@Override
 		public boolean isTokenAllowed(Token token) {
 			if (!super.isTokenAllowed(token)) {
@@ -81,12 +86,6 @@ public class TransformPatcher {
 			return true;
 		}
 	};
-	private static final boolean useCache = true;
-	private static final Map<CacheKey, Map<PatchShaderType, String>> cache = new LRUCache<>(400);
-	private static final List<String> internalPrefixes = List.of("iris_", "irisMain", "moj_import");
-	private static final Pattern versionPattern = Pattern.compile("#version\\s+(\\d+)", Pattern.DOTALL);
-	private static final EnumASTTransformer<Parameters, PatchShaderType> transformer;
-	static Logger LOGGER = LogManager.getLogger(TransformPatcher.class);
 
 	static {
 		transformer = new EnumASTTransformer<>(PatchShaderType.class) {
@@ -144,8 +143,8 @@ public class TransformPatcher {
 
 						if (profile == Profile.CORE || version.number >= 150 && profile == null || isLine) {
 							// patch the version number to at least 330
-							if (version.number < 330) {
-								versionStatement.version = Version.GLSL33;
+							if (version.number < 410) {
+								versionStatement.version = Version.GLSL41;
 							}
 
 							switch (parameters.patch) {
@@ -168,8 +167,8 @@ public class TransformPatcher {
 							}
 						} else {
 							// patch the version number to at least 330
-							if (version.number < 330) {
-								versionStatement.version = Version.GLSL33;
+							if (version.number < 410) {
+								versionStatement.version = Version.GLSL41;
 							}
 							versionStatement.profile = Profile.CORE;
 
@@ -306,7 +305,12 @@ public class TransformPatcher {
 		String name, String vertex, String tessControl, String tessEval, String geometry, String fragment,
 		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new DHParameters(Patch.DH_TERRAIN, textureMap));
+			new Parameters(Patch.DH_TERRAIN, textureMap) {
+				@Override
+				public TextureStage getTextureStage() {
+					return TextureStage.GBUFFERS_AND_SHADOW;
+				}
+			});
 	}
 
 
@@ -314,15 +318,19 @@ public class TransformPatcher {
 		String name, String vertex, String tessControl, String tessEval, String geometry, String fragment,
 		Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new DHParameters(Patch.DH_GENERIC, textureMap));
-
+			new Parameters(Patch.DH_GENERIC, textureMap) {
+				@Override
+				public TextureStage getTextureStage() {
+					return TextureStage.GBUFFERS_AND_SHADOW;
+				}
+			});
 	}
 
 	public static Map<PatchShaderType, String> patchSodium(String name, String vertex, String geometry, String tessControl, String tessEval, String fragment,
-														   AlphaTest alpha,
+														   AlphaTest alpha, ShaderAttributeInputs inputs,
 														   Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
 		return transform(name, vertex, geometry, tessControl, tessEval, fragment,
-			new SodiumParameters(Patch.SODIUM, textureMap, alpha));
+			new SodiumParameters(Patch.SODIUM, textureMap, alpha, inputs));
 	}
 
 	public static Map<PatchShaderType, String> patchComposite(

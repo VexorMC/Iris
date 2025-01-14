@@ -1,5 +1,6 @@
 package net.irisshaders.iris.gl.uniform;
 
+import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector2f;
 import org.joml.Vector2i;

@@ -52,6 +52,7 @@ public class ShadowCompositeRenderer {
 
 	private final ImmutableList<Pass> passes;
 	private final TextureAccess noiseTexture;
+	private final FrameUpdateNotifier updateNotifier;
 	private final Object2ObjectMap<String, TextureAccess> customTextureIds;
 	private final ImmutableSet<Integer> flippedAtLeastOnceFinal;
 	private final CustomUniforms customUniforms;
@@ -64,6 +65,7 @@ public class ShadowCompositeRenderer {
 								   Object2ObjectMap<String, TextureAccess> customTextureIds, Set<GlImage> customImages, ImmutableMap<Integer, Boolean> explicitPreFlips, Object2ObjectMap<String, TextureAccess> irisCustomTextures, CustomUniforms customUniforms) {
 		this.pipeline = pipeline;
 		this.noiseTexture = noiseTexture;
+		this.updateNotifier = updateNotifier;
 		this.renderTargets = renderTargets;
 		this.customTextureIds = customTextureIds;
 		this.irisCustomTextures = irisCustomTextures;
@@ -91,7 +93,7 @@ public class ShadowCompositeRenderer {
 			ImmutableSet<Integer> flippedAtLeastOnceSnapshot = flippedAtLeastOnce.build();
 
 			if (source == null || !source.isValid()) {
-				if (computes.length > 0 && computes[i] != null) {
+				if (computes[i] != null) {
 					ComputeOnlyPass pass = new ComputeOnlyPass();
 					pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, renderTargets, holder);
 					passes.add(pass);
@@ -103,11 +105,7 @@ public class ShadowCompositeRenderer {
 			ProgramDirectives directives = source.getDirectives();
 
 			pass.program = createProgram(source, flipped, flippedAtLeastOnceSnapshot, renderTargets);
-			if (computes.length > 0) {
-				pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, renderTargets, holder);
-			} else {
-				pass.computes = new ComputeProgram[0];
-			}
+			pass.computes = createComputes(computes[i], flipped, flippedAtLeastOnceSnapshot, renderTargets, holder);
 			int[] drawBuffers = source.getDirectives().hasUnknownDrawBuffers() ? new int[]{0, 1} : source.getDirectives().getDrawBuffers();
 
 			GlFramebuffer framebuffer = renderTargets.createColorFramebuffer(flipped, drawBuffers);
@@ -144,7 +142,7 @@ public class ShadowCompositeRenderer {
 		this.passes = passes.build();
 		this.flippedAtLeastOnceFinal = flippedAtLeastOnce.build();
 
-		GlStateManager._glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, 0);
+		GlStateManager.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, 0);
 	}
 
 	private static void setupMipmapping(net.irisshaders.iris.targets.RenderTarget target, boolean readFromAlt) {
@@ -235,17 +233,14 @@ public class ShadowCompositeRenderer {
 
 		// Make sure to reset the viewport to how it was before... Otherwise weird issues could occur.
 		ProgramUniforms.clearActiveUniforms();
-		GlStateManager._glUseProgram(0);
+		GlStateManager.glUseProgram(0);
 
-		// TODO IMS: Apparantly we are not supposed to do this for shadowcomp...
-		/*
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 			// Reset mipmapping states at the end of the frame.
 			if (renderTargets.get(i) != null) {
 				resetRenderTarget(renderTargets.get(i));
 			}
 		}
-		 */
 
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
 	}
@@ -298,7 +293,8 @@ public class ShadowCompositeRenderer {
 		ComputeProgram[] programs = new ComputeProgram[sources.length];
 		for (int i = 0; i < programs.length; i++) {
 			ComputeSource source = sources[i];
-			if (source == null || source.getSource().isEmpty()) {
+			if (source == null || !source.getSource().isPresent()) {
+				continue;
 			} else {
 				Objects.requireNonNull(flipped);
 				ProgramBuilder builder;

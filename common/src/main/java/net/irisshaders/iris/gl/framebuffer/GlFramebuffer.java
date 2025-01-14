@@ -6,7 +6,9 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import net.irisshaders.iris.gl.GlResource;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
-import net.irisshaders.iris.pbr.TextureInfoCache;
+import net.irisshaders.iris.texture.TextureInfoCache;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL30C;
 
 public class GlFramebuffer extends GlResource {
@@ -19,8 +21,8 @@ public class GlFramebuffer extends GlResource {
 		super(IrisRenderSystem.createFramebuffer());
 
 		this.attachments = new Int2IntArrayMap();
-		this.maxDrawBuffers = GlStateManager._getInteger(GL30C.GL_MAX_DRAW_BUFFERS);
-		this.maxColorAttachments = GlStateManager._getInteger(GL30C.GL_MAX_COLOR_ATTACHMENTS);
+		this.maxDrawBuffers = GL15.glGetInteger(GL30C.GL_MAX_DRAW_BUFFERS);
+		this.maxColorAttachments = GL15.glGetInteger(GL30C.GL_MAX_COLOR_ATTACHMENTS);
 		this.hasDepthAttachment = false;
 	}
 
@@ -82,25 +84,25 @@ public class GlFramebuffer extends GlResource {
 	}
 
 	public void bind() {
-		GlStateManager._glBindFramebuffer(GL30C.GL_FRAMEBUFFER, getGlId());
+		GL30.glBindFramebuffer(GL30C.GL_FRAMEBUFFER, getGlId());
 	}
 
 	public void bindAsReadBuffer() {
-		GlStateManager._glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, getGlId());
+		GL30.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, getGlId());
 	}
 
 	public void bindAsDrawBuffer() {
-		GlStateManager._glBindFramebuffer(GL30C.GL_DRAW_FRAMEBUFFER, getGlId());
+		GL30.glBindFramebuffer(GL30C.GL_DRAW_FRAMEBUFFER, getGlId());
 	}
 
 	protected void destroyInternal() {
-		GlStateManager._glDeleteFramebuffers(getGlId());
+		GL30.glDeleteFramebuffers(getGlId());
 	}
 
 	public int getStatus() {
 		bind();
 
-		return GlStateManager.glCheckFramebufferStatus(GL30C.GL_FRAMEBUFFER);
+		return GL30.glCheckFramebufferStatus(GL30C.GL_FRAMEBUFFER);
 	}
 
 	public int getId() {

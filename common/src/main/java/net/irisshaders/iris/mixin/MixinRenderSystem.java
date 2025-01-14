@@ -1,18 +1,19 @@
 package net.irisshaders.iris.mixin;
 
-import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.GLDebug;
 import net.irisshaders.iris.gl.IrisRenderSystem;
-import net.irisshaders.iris.pbr.TextureTracker;
 import net.irisshaders.iris.samplers.IrisSamplers;
+import net.irisshaders.iris.texture.TextureTracker;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(RenderSystem.class)
 public class MixinRenderSystem {
@@ -25,8 +26,8 @@ public class MixinRenderSystem {
 		Iris.onRenderSystemInit();
 	}
 
-	@Inject(method = "_setShaderTexture(ILnet/minecraft/resources/ResourceLocation;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/texture/AbstractTexture;getId()I", shift = At.Shift.AFTER))
-	private static void _setShaderTexture(int unit, ResourceLocation resourceLocation, CallbackInfo ci, @Local AbstractTexture tex) {
+	@Inject(method = "_setShaderTexture(ILnet/minecraft/resources/ResourceLocation;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/texture/AbstractTexture;getId()I", shift = At.Shift.AFTER), locals = LocalCapture.CAPTURE_FAILHARD)
+	private static void _setShaderTexture(int unit, ResourceLocation resourceLocation, CallbackInfo ci, TextureManager lv, AbstractTexture tex) {
 		TextureTracker.INSTANCE.onSetShaderTexture(unit, tex.getId());
 	}
 

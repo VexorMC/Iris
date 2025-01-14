@@ -7,16 +7,38 @@ import java.util.EmptyStackException;
 import java.util.Stack;
 
 public class BooleanParser {
+	private enum Operation {
+		AND {
+			@Override
+			boolean compute(boolean value, Stack<Boolean> valueStack) {
+				return valueStack.pop() && value;
+			}
+		}, OR {
+			@Override
+			boolean compute(boolean value, Stack<Boolean> valueStack) {
+				return valueStack.pop() || value;
+			}
+		}, NOT {
+			@Override
+			boolean compute(boolean value, Stack<Boolean> valueStack) {
+				return !value;
+			}
+		}, OPEN;
+
+		boolean compute(boolean value, Stack<Boolean> valueStack) {
+			return value;
+		}
+	}
+
 	/**
 	 * parses the given expression
-	 *
-	 * @param expression  expression to parse
+	 * @param expression expression to parse
 	 * @param valueLookup lookup of shadow options
 	 * @return result of the expression, or true if there was an error
 	 */
 	public static boolean parse(String expression, OptionValues valueLookup) {
 		try {
-			StringBuilder option = new StringBuilder();
+			String option = "";
 			Stack<Operation> operationStack = new Stack<>();
 			Stack<Boolean> valueStack = new Stack<>();
 			for (int i = 0; i < expression.length(); i++) {
@@ -26,8 +48,8 @@ public class BooleanParser {
 					case '&' -> {
 						// add value first, because this checks for preceding NOTs
 						if (!option.isEmpty()) {
-							valueStack.push(processValue(option.toString(), valueLookup, operationStack));
-							option = new StringBuilder();
+							valueStack.push(processValue(option, valueLookup, operationStack));
+							option = "";
 						}
 						// AND operators have priority, so add a bracket if it's the first AND
 						if (operationStack.isEmpty() || !operationStack.peek().equals(Operation.AND)) {
@@ -39,8 +61,8 @@ public class BooleanParser {
 					case '|' -> {
 						// add value first, because this checks for preceding NOTs
 						if (!option.isEmpty()) {
-							valueStack.push(processValue(option.toString(), valueLookup, operationStack));
-							option = new StringBuilder();
+							valueStack.push(processValue(option, valueLookup, operationStack));
+							option = "";
 						}
 						// if there was an AND before, that needs to be evaluated because it takes priority
 						if (!operationStack.isEmpty() && operationStack.peek().equals(Operation.AND)) {
@@ -53,8 +75,8 @@ public class BooleanParser {
 					case ')' -> {
 						// add value first, because this checks for preceding NOTs
 						if (!option.isEmpty()) {
-							valueStack.push(processValue(option.toString(), valueLookup, operationStack));
-							option = new StringBuilder();
+							valueStack.push(processValue(option, valueLookup, operationStack));
+							option = "";
 						}
 						// if there was an AND before, that needs to be evaluated because it added its own bracket
 						if (!operationStack.isEmpty() && operationStack.peek().equals(Operation.AND)) {
@@ -62,13 +84,12 @@ public class BooleanParser {
 						}
 						evaluate(operationStack, valueStack, true);
 					}
-					case ' ' -> {
-					}
-					default -> option.append(c);
+					case ' ' -> {}
+					default -> option += c;
 				}
 			}
 			if (!option.isEmpty()) {
-				valueStack.push(processValue(option.toString(), valueLookup, operationStack));
+				valueStack.push(processValue(option, valueLookup, operationStack));
 			}
 			evaluate(operationStack, valueStack, false);
 			boolean result = valueStack.pop();
@@ -107,9 +128,8 @@ public class BooleanParser {
 
 	/**
 	 * evaluates the operation stack backwards, to the next bracket, or the whole way
-	 *
 	 * @param operationStack Stack with operations
-	 * @param valueStack     Stack with values
+	 * @param valueStack Stack with values
 	 * @param currentBracket only evaluates the current bracket
 	 */
 	private static void evaluate(Stack<Operation> operationStack, Stack<Boolean> valueStack, boolean currentBracket) {
@@ -126,28 +146,5 @@ public class BooleanParser {
 			}
 		}
 		valueStack.push(value);
-	}
-
-	private enum Operation {
-		AND {
-			@Override
-			boolean compute(boolean value, Stack<Boolean> valueStack) {
-				return valueStack.pop() && value;
-			}
-		}, OR {
-			@Override
-			boolean compute(boolean value, Stack<Boolean> valueStack) {
-				return valueStack.pop() || value;
-			}
-		}, NOT {
-			@Override
-			boolean compute(boolean value, Stack<Boolean> valueStack) {
-				return !value;
-			}
-		}, OPEN;
-
-		boolean compute(boolean value, Stack<Boolean> valueStack) {
-			return value;
-		}
 	}
 }
