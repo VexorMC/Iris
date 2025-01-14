@@ -1,35 +1,20 @@
 package net.irisshaders.iris.pathways;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexBuffer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.platform.GlStateManager;
 import net.irisshaders.iris.gl.IrisRenderSystem;
-import net.irisshaders.iris.helpers.VertexBufferHelper;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
 
 /**
  * Renders a full-screen textured quad to the screen. Used in composite / deferred rendering.
  */
 public class FullScreenQuadRenderer {
+	private final int quadBuffer;
+
 	public static final FullScreenQuadRenderer INSTANCE = new FullScreenQuadRenderer();
 
-	private final VertexBuffer quad;
-
 	private FullScreenQuadRenderer() {
-		BufferBuilder bufferBuilder = new BufferBuilder(DefaultVertexFormat.POSITION_TEX.getVertexSize() * 4);
-		bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-		bufferBuilder.vertex(0.0F, 0.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
-		bufferBuilder.vertex(1.0F, 0.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
-		bufferBuilder.vertex(1.0F, 1.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
-		bufferBuilder.vertex(0.0F, 1.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
-		BufferBuilder.RenderedBuffer renderedBuffer = bufferBuilder.end();
-
-		quad = new VertexBuffer(VertexBuffer.Usage.STATIC);
-		quad.bind();
-		quad.upload(renderedBuffer);
-		VertexBuffer.unbind();
+		this.quadBuffer = createQuad();
 	}
 
 	public void render() {
@@ -41,26 +26,61 @@ public class FullScreenQuadRenderer {
 	}
 
 	public void begin() {
-		((VertexBufferHelper) quad).saveBinding();
-		RenderSystem.disableDepthTest();
-		BufferUploader.reset();
-		quad.bind();
+		GlStateManager.disableDepthTest();
+
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glPushMatrix();
+		GL11.glLoadIdentity();
+		// scale the quad from [0, 1] to [-1, 1]
+		GL11.glTranslatef(-1.0F, -1.0F, 0.0F);
+		GL11.glScalef(2.0F, 2.0F, 0.0F);
+
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glPushMatrix();
+		GL11.glLoadIdentity();
+
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 
 	public void renderQuad() {
-		IrisRenderSystem.overridePolygonMode();
-		quad.draw();
-		IrisRenderSystem.restorePolygonMode();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadBuffer);
+
+		GL11.glVertexPointer(3, GL11.GL_FLOAT, 5 * Float.BYTES, 0); // 3 floats for position, stride 5 * float size, offset 0
+		GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+
+		GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 5 * Float.BYTES, 3 * Float.BYTES); // 2 floats for texture coords, stride 5 * float size, offset 3 * float size
+		GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+
+		GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
+
+		GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+		GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 	}
 
-	public void end() {
-		// NB: No need to clear the buffer state by calling glDisableVertexAttribArray - this VAO will always
-		// have the same format, and buffer state is only associated with a given VAO, so we can keep it bound.
-		//
-		// Using quad.getFormat().clearBufferState() causes some Intel drivers to freak out:
-		// https://github.com/IrisShaders/Iris/issues/1214
+	public static void end() {
+		GlStateManager.enableDepthTest();
 
-		RenderSystem.enableDepthTest();
-		((VertexBufferHelper) quad).restoreBinding();
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glPopMatrix();
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glPopMatrix();
+	}
+
+	/**
+	 * Creates and uploads a vertex buffer containing a single full-screen quad
+	 */
+	private static int createQuad() {
+		return IrisRenderSystem.bufferStorage(GL15.GL_ARRAY_BUFFER, new float[]{
+			// Vertex 0: Top right corner
+			1.0F, 1.0F, 0.0F, 1.0F, 1.0F,
+			// Vertex 1: Top left corner
+			0.0F, 1.0F, 0.0F, 0.0F, 1.0F,
+			// Vertex 2: Bottom right corner
+			1.0F, 0.0F, 0.0F, 1.0F, 0.0F,
+			// Vertex 3: Bottom left corner
+			0.0F, 0.0F, 0.0F, 0.0F, 0.0F
+		}, GL15.GL_STATIC_DRAW);
 	}
 }
